@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:uisample/pages/newEnquirypage.dart';
 import 'package:uisample/widegets/hometile.dart';
 
 class Myhomepage extends StatefulWidget {
-  Myhomepage({super.key});
+  const Myhomepage({super.key});
 
   @override
   State<Myhomepage> createState() => _MyhomepageState();
@@ -11,6 +13,35 @@ class Myhomepage extends StatefulWidget {
 
 class _MyhomepageState extends State<Myhomepage> {
   bool light = false;
+  TextEditingController loccontroller = TextEditingController();
+  Position? _currentlocation;
+  late bool servicepermission = false;
+  late LocationPermission permission;
+  String currentadress = "";
+  Future<Position> _getCurrentlocation() async {
+    servicepermission = await Geolocator.isLocationServiceEnabled();
+    if (!servicepermission) {
+      debugPrint("service disabled");
+    }
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    return await Geolocator.getCurrentPosition();
+  }
+
+  _getaddressfromcordinator() async {
+    try {
+      List<Placemark> placemark = await placemarkFromCoordinates(
+          _currentlocation!.latitude, _currentlocation!.longitude);
+      Placemark place = placemark[0];
+      setState(() {
+        currentadress = "${place.locality},${place.country}";
+      });
+    } catch (e) {
+      debugPrint("$e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,17 +77,51 @@ class _MyhomepageState extends State<Myhomepage> {
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(30),
           child: Container(
-            height: 30,
+            height: 40,
             width: double.infinity,
             color: Colors.blue[700],
-            child: const Align(
+            child: Align(
               alignment: Alignment.centerLeft,
-              child: Text(
-                "welcome Abhilash",
-                style: TextStyle(
-                  fontSize: 17,
-                  color: Colors.white,
-                ),
+              child: Row(
+                children: [
+                  const Expanded(
+                    flex: 2,
+                    child: Text(
+                      "welcome Abhilash",
+                      style: TextStyle(
+                        fontSize: 17,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: Text(
+                            currentadress,
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: IconButton(
+                            onPressed: () async {
+                              _currentlocation = await _getCurrentlocation();
+                              await _getaddressfromcordinator();
+                            },
+                            icon: const Icon(
+                              Icons.location_on,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -65,8 +130,8 @@ class _MyhomepageState extends State<Myhomepage> {
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: GridView(
-          gridDelegate:
-              SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2),
           children: [
             Homecard(
               name: "New Enquiries",

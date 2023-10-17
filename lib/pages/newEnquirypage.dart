@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:uisample/pages/productPage.dart';
 
 class Newenquiry extends StatefulWidget {
   const Newenquiry({super.key});
@@ -12,6 +13,15 @@ class _NewenquiryState extends State<Newenquiry> {
   TextEditingController dateinput = TextEditingController();
   TextEditingController expdate = TextEditingController();
   TextEditingController timecontroller = TextEditingController();
+  TextEditingController producttext = TextEditingController();
+  var productlist = [];
+  void gotoPage() async {
+    final products = await Navigator.of(context)
+        .push(MaterialPageRoute(builder: ((context) => Productpage())));
+    setState(() {
+      productlist = products;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -250,6 +260,35 @@ class _NewenquiryState extends State<Newenquiry> {
                 )),
               ],
             ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Expanded(
+                    child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextFormField(
+                    controller: producttext,
+                    decoration: const InputDecoration(
+                      labelText: "Products",
+                    ),
+                    onTap: () {
+                      gotoPage();
+                    },
+                  ),
+                )),
+              ],
+            ),
+            Container(
+              height: 500,
+              child: productlist.isEmpty
+                  ? Container()
+                  : ListView.builder(
+                      itemCount: productlist.length,
+                      itemBuilder: ((context, index) => ListTile(
+                            title: productlist[index]['title'],
+                          )),
+                    ),
+            )
           ],
         ),
       ),
