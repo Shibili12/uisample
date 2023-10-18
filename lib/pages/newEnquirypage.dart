@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:uisample/pages/productPage.dart';
+import 'package:uisample/productdetails.dart';
 
 class Newenquiry extends StatefulWidget {
   const Newenquiry({super.key});
@@ -15,11 +16,13 @@ class _NewenquiryState extends State<Newenquiry> {
   TextEditingController timecontroller = TextEditingController();
   TextEditingController producttext = TextEditingController();
   var productlist = [];
-  void gotoPage() async {
+  List<ProductDetails> productdetails = List.empty(growable: true);
+  void getproduct() async {
     final products = await Navigator.of(context)
         .push(MaterialPageRoute(builder: ((context) => Productpage())));
+    print(products);
     setState(() {
-      productlist = products;
+      productlist.add(products);
     });
   }
 
@@ -272,7 +275,7 @@ class _NewenquiryState extends State<Newenquiry> {
                       labelText: "Products",
                     ),
                     onTap: () {
-                      gotoPage();
+                      getproduct();
                     },
                   ),
                 )),
@@ -285,10 +288,217 @@ class _NewenquiryState extends State<Newenquiry> {
                   : ListView.builder(
                       itemCount: productlist.length,
                       itemBuilder: ((context, index) => ListTile(
-                            title: productlist[index]['title'],
+                            title: Text(productlist[index].title ?? ""),
+                            subtitle:
+                                Text("Price:${productlist[index].price}" ?? ""),
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) => openPopUp(
+                                    context, productlist[index], null),
+                              );
+                            },
+                            trailing: ElevatedButton(
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) => openPopUp(
+                                      context,
+                                      productlist[index],
+                                      productdetails[index]),
+                                );
+                              },
+                              child: Text("Edit"),
+                            ),
                           )),
                     ),
             )
+          ],
+        ),
+      ),
+    );
+  }
+
+  openPopUp(BuildContext context, product, index) {
+    TextEditingController productcntrl =
+        TextEditingController(text: product.title);
+    TextEditingController pricecontroller =
+        TextEditingController(text: "\$ ${product.price}");
+    TextEditingController taxcontroller = TextEditingController();
+
+    TextEditingController qtycontroller = TextEditingController();
+    TextEditingController totalcontroller = TextEditingController();
+    TextEditingController taxamound = TextEditingController();
+    TextEditingController salesvalue = TextEditingController();
+    if (index != null) {
+      final existingdata =
+          productdetails.firstWhere((element) => element.name == product.title);
+      qtycontroller.text = existingdata.qty;
+      totalcontroller.text = existingdata.total;
+      taxcontroller.text = existingdata.tax;
+      taxamound.text = existingdata.taxamound;
+      salesvalue.text = existingdata.salesvalue;
+    }
+
+    return AlertDialog(
+      content: SizedBox(
+        height: 370,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                controller: productcntrl,
+                decoration: const InputDecoration(
+                  labelText: "                   product",
+                ),
+              ),
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextField(
+                      controller: qtycontroller,
+                      decoration: InputDecoration(
+                        labelText: "QTY",
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          totalcontroller.text =
+                              "${int.parse(qtycontroller.text) * product.price}";
+                        });
+                      },
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextField(
+                      controller: pricecontroller,
+                      decoration: InputDecoration(
+                        labelText: "Price",
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextField(
+                      controller: totalcontroller,
+                      decoration: const InputDecoration(
+                        labelText: "Total",
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: TextField(
+                        controller: taxcontroller,
+                        decoration: InputDecoration(
+                          // labelText: 'Tax %',
+                          suffixIcon: DropdownButtonFormField(
+                            decoration: const InputDecoration(
+                              labelText: 'Tax %',
+                              border: OutlineInputBorder(
+                                  borderSide: BorderSide.none),
+                            ),
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                taxcontroller.text = newValue!;
+                                taxamound.text =
+                                    "${product.price * int.parse(taxcontroller.text) / 100}";
+                                salesvalue.text =
+                                    "${int.parse(qtycontroller.text) * double.parse(taxamound.text) + int.parse(totalcontroller.text)}";
+                              });
+                            },
+                            items: <String>['5', '10', '15']
+                                .map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      )),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextField(
+                      controller: taxamound,
+                      decoration: const InputDecoration(
+                        labelText: "Tax amount",
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextField(
+                      controller: salesvalue,
+                      decoration: const InputDecoration(
+                        labelText: "Sales value",
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(
+              height: 15,
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    String name = productcntrl.text;
+                    String qty = qtycontroller.text;
+                    String price = pricecontroller.text;
+                    String total = totalcontroller.text;
+                    String tax = taxcontroller.text;
+                    String taxamount = taxamound.text;
+                    String sales = salesvalue.text;
+
+                    setState(() {
+                      productdetails.add(ProductDetails(
+                          name: name,
+                          qty: qty,
+                          price: price,
+                          total: total,
+                          tax: tax,
+                          taxamound: taxamount,
+                          salesvalue: sales));
+                    });
+
+                    Navigator.of(context).pop();
+                  },
+                  child: Text(productdetails.isEmpty ? "ADD" : "UPDATE"),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text("cancel"),
+                ),
+              ],
+            ),
           ],
         ),
       ),
