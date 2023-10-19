@@ -14,6 +14,7 @@ class Productpage extends StatefulWidget {
 
 class _ProductpageState extends State<Productpage> {
   List<Product> productlist = [];
+  TextEditingController serchcontroller = TextEditingController();
   @override
   void initState() {
     fetchdata();
@@ -37,24 +38,60 @@ class _ProductpageState extends State<Productpage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox(
-        child: productlist.isEmpty
-            ? Center(
-                child: CircularProgressIndicator(),
-              )
-            : ListView.builder(
-                itemCount: productlist.length,
-                itemBuilder: (context, index) => Card(
-                  child: ListTile(
-                    title: Text(productlist[index].title!),
-                    subtitle: Text("${productlist[index].price!}"),
-                    onTap: () {
-                      Navigator.of(context).pop(productlist[index]);
-                    },
+      body: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              height: 80,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextField(
+                  controller: serchcontroller,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    hintText: "Search here",
+                    suffixIcon: Icon(Icons.search),
                   ),
+                  onChanged: searchProduct,
                 ),
               ),
+            ),
+            Expanded(
+                flex: 8,
+                child: SizedBox(
+                  child: productlist.isEmpty
+                      ? Center(
+                          child: CircularProgressIndicator(),
+                        )
+                      : ListView.builder(
+                          itemCount: productlist.length,
+                          itemBuilder: (context, index) => Card(
+                            child: ListTile(
+                              title: Text(productlist[index].title!),
+                              subtitle: Text("${productlist[index].price!}"),
+                              onTap: () {
+                                Navigator.of(context).pop(productlist[index]);
+                              },
+                            ),
+                          ),
+                        ),
+                ))
+          ],
+        ),
       ),
     );
+  }
+
+  void searchProduct(String query) {
+    final suggestions = productlist.where((product) {
+      final productTitle = product.title!.toLowerCase();
+      final input = query.toLowerCase();
+      return productTitle.contains(input);
+    }).toList();
+    setState(() {
+      productlist = suggestions;
+    });
   }
 }

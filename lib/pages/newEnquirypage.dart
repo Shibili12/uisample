@@ -17,6 +17,7 @@ class _NewenquiryState extends State<Newenquiry> {
   TextEditingController producttext = TextEditingController();
   var productlist = [];
   List<ProductDetails> productdetails = List.empty(growable: true);
+
   void getproduct() async {
     final products = await Navigator.of(context)
         .push(MaterialPageRoute(builder: ((context) => Productpage())));
@@ -282,44 +283,79 @@ class _NewenquiryState extends State<Newenquiry> {
               ],
             ),
             Container(
-              height: 500,
+              height: 200,
               child: productlist.isEmpty
                   ? Container()
                   : ListView.builder(
                       itemCount: productlist.length,
-                      itemBuilder: ((context, index) => ListTile(
-                            title: Text(productlist[index].title ?? ""),
-                            subtitle:
-                                Text("Price:${productlist[index].price}" ?? ""),
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) => openPopUp(
-                                    context, productlist[index], null),
-                              );
+                      itemBuilder: ((context, index) => Dismissible(
+                            key: Key("${productlist[index].id}"),
+                            background: Container(
+                              color: Colors.red,
+                              child: Center(
+                                child: Text("DELETE"),
+                              ),
+                            ),
+                            direction: DismissDirection.endToStart,
+                            onDismissed: (direction) {
+                              setState(() {
+                                productlist.removeAt(index);
+                                productdetails.removeAt(index);
+                              });
                             },
-                            trailing: ElevatedButton(
-                              onPressed: () {
+                            child: ListTile(
+                              title: Text(productlist[index].title ?? ""),
+                              subtitle: Text(
+                                  "Price:${productlist[index].price}" ?? ""),
+                              onTap: () {
                                 showDialog(
                                   context: context,
                                   builder: (BuildContext context) => openPopUp(
-                                      context,
-                                      productlist[index],
-                                      productdetails[index]),
+                                      context, productlist[index], null),
                                 );
                               },
-                              child: Text("Edit"),
+                              trailing: ElevatedButton(
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) =>
+                                        openPopUp(
+                                            context, productlist[index], index),
+                                  );
+                                },
+                                child: Text("Edit"),
+                              ),
                             ),
                           )),
                     ),
-            )
+            ),
+            Container(
+              height: 40,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Text(
+                    productlist.isNotEmpty
+                        ? 'Total Price: \$${calculatetotalprice(productdetails).toStringAsFixed(2)}'
+                        : "",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    productlist.isNotEmpty
+                        ? 'Tax amount: \$${calculatetaxamount(productdetails).toStringAsFixed(2)}'
+                        : "",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  openPopUp(BuildContext context, product, index) {
+  openPopUp(BuildContext context, product, int? index) {
     TextEditingController productcntrl =
         TextEditingController(text: product.title);
     TextEditingController pricecontroller =
@@ -331,13 +367,11 @@ class _NewenquiryState extends State<Newenquiry> {
     TextEditingController taxamound = TextEditingController();
     TextEditingController salesvalue = TextEditingController();
     if (index != null) {
-      final existingdata =
-          productdetails.firstWhere((element) => element.name == product.title);
-      qtycontroller.text = existingdata.qty;
-      totalcontroller.text = existingdata.total;
-      taxcontroller.text = existingdata.tax;
-      taxamound.text = existingdata.taxamound;
-      salesvalue.text = existingdata.salesvalue;
+      qtycontroller.text = productdetails[index].qty;
+      totalcontroller.text = productdetails[index].total;
+      taxcontroller.text = productdetails[index].tax;
+      taxamound.text = productdetails[index].taxamound;
+      salesvalue.text = productdetails[index].salesvalue;
     }
 
     return AlertDialog(
@@ -407,6 +441,7 @@ class _NewenquiryState extends State<Newenquiry> {
                         decoration: InputDecoration(
                           // labelText: 'Tax %',
                           suffixIcon: DropdownButtonFormField(
+                            value: index != null ? taxcontroller.text : null,
                             decoration: const InputDecoration(
                               labelText: 'Tax %',
                               border: OutlineInputBorder(
@@ -477,14 +512,22 @@ class _NewenquiryState extends State<Newenquiry> {
                     String sales = salesvalue.text;
 
                     setState(() {
-                      productdetails.add(ProductDetails(
-                          name: name,
-                          qty: qty,
-                          price: price,
-                          total: total,
-                          tax: tax,
-                          taxamound: taxamount,
-                          salesvalue: sales));
+                      if (index == null) {
+                        productdetails.add(ProductDetails(
+                            name: name,
+                            qty: qty,
+                            price: price,
+                            total: total,
+                            tax: tax,
+                            taxamound: taxamount,
+                            salesvalue: sales));
+                      } else {
+                        productdetails[index].qty = qtycontroller.text;
+                        productdetails[index].tax = taxcontroller.text;
+                        productdetails[index].total = totalcontroller.text;
+                        productdetails[index].taxamound = taxamound.text;
+                        productdetails[index].salesvalue = salesvalue.text;
+                      }
                     });
 
                     Navigator.of(context).pop();
@@ -503,5 +546,25 @@ class _NewenquiryState extends State<Newenquiry> {
         ),
       ),
     );
+  }
+
+  double calculatetotalprice(List<ProductDetails> productdetails) {
+    double total = 0.0;
+    for (var element in productdetails) {
+      setState(() {
+        total += double.parse(element.total);
+      });
+    }
+    return total;
+  }
+
+  double calculatetaxamount(List<ProductDetails> productdetails) {
+    double taxamount = 0.0;
+    for (var element in productdetails) {
+      setState(() {
+        taxamount += double.parse(element.taxamound);
+      });
+    }
+    return taxamount;
   }
 }

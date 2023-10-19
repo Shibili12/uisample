@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uisample/pages/newEnquirypage.dart';
 import 'package:uisample/widegets/hometile.dart';
 
@@ -18,6 +19,8 @@ class _MyhomepageState extends State<Myhomepage> {
   late bool servicepermission = false;
   late LocationPermission permission;
   String currentadress = "";
+  late SharedPreferences preferences;
+  late String username;
   Future<Position> _getCurrentlocation() async {
     servicepermission = await Geolocator.isLocationServiceEnabled();
     if (!servicepermission) {
@@ -41,6 +44,19 @@ class _MyhomepageState extends State<Myhomepage> {
     } catch (e) {
       debugPrint("$e");
     }
+  }
+
+  @override
+  void initState() {
+    getuser();
+    super.initState();
+  }
+
+  void getuser() async {
+    preferences = await SharedPreferences.getInstance();
+    setState(() {
+      username = preferences.getString('username')!;
+    });
   }
 
   @override
@@ -84,10 +100,10 @@ class _MyhomepageState extends State<Myhomepage> {
               alignment: Alignment.centerLeft,
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     flex: 2,
                     child: Text(
-                      "welcome Abhilash",
+                      "welcome $username",
                       style: TextStyle(
                         fontSize: 17,
                         color: Colors.white,
