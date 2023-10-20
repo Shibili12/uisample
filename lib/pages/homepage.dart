@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uisample/pages/callLogspage.dart';
+import 'package:uisample/pages/loginpage.dart';
 import 'package:uisample/pages/newEnquirypage.dart';
 import 'package:uisample/widegets/hometile.dart';
 
@@ -64,7 +66,7 @@ class _MyhomepageState extends State<Myhomepage> {
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        leading: const Icon(Icons.menu),
+        // leading: const Icon(Icons.menu),
         title: const Text("Off Duty"),
         actions: [
           IconButton(
@@ -143,6 +145,24 @@ class _MyhomepageState extends State<Myhomepage> {
           ),
         ),
       ),
+      drawer: Drawer(
+        child: ListView(
+          children: [
+            const DrawerHeader(
+              child: Center(child: Text("")),
+            ),
+            ListTile(
+              title: const Text("logout"),
+              trailing: const Icon(Icons.logout),
+              onTap: () {
+                preferences.setBool('newuser', true);
+                Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => Loginpage()));
+              },
+            ),
+          ],
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: GridView(
@@ -186,7 +206,10 @@ class _MyhomepageState extends State<Myhomepage> {
               name: "CallLogs",
               color: Colors.green,
               icon: Icons.call,
-              ontap: () {},
+              ontap: () {
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => CallLogsscreen()));
+              },
             ),
             Homecard(
               name: "Add Complaints",

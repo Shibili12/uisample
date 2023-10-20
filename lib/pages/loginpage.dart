@@ -17,6 +17,22 @@ class _LoginpageState extends State<Loginpage> {
   String username = "admin";
   String password = "admin123";
   late SharedPreferences preferences;
+  late bool newuser;
+  @override
+  void initState() {
+    check_user_already_login();
+    super.initState();
+  }
+
+  void check_user_already_login() async {
+    preferences = await SharedPreferences.getInstance();
+    newuser = preferences.getBool('newuser') ?? true;
+    if (newuser == false) {
+      Navigator.of(context)
+          .push(MaterialPageRoute(builder: (context) => Myhomepage()));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -80,6 +96,8 @@ class _LoginpageState extends State<Loginpage> {
                 if (uname == username && pass == password) {
                   preferences.setString('username', uname);
                   preferences.setString('password', pass);
+
+                  preferences.setBool('newuser', false);
                   Navigator.of(context).push(
                       MaterialPageRoute(builder: (context) => Myhomepage()));
                 }

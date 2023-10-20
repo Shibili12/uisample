@@ -15,13 +15,8 @@ class Productpage extends StatefulWidget {
 class _ProductpageState extends State<Productpage> {
   List<Product> productlist = [];
   TextEditingController serchcontroller = TextEditingController();
-  @override
-  void initState() {
-    fetchdata();
-    super.initState();
-  }
 
-  void fetchdata() async {
+  Future<List<Product>> fetchdata() async {
     var url = Uri.parse("https://dummyjson.com/products");
     var response = await http.get(url);
     if (response.statusCode == 200) {
@@ -30,8 +25,9 @@ class _ProductpageState extends State<Productpage> {
       setState(() {
         productlist = productmodel.products!;
       });
+      return productlist;
     } else {
-      print('Request failed with status: ${response.statusCode}.');
+      return productlist;
     }
   }
 
@@ -59,25 +55,31 @@ class _ProductpageState extends State<Productpage> {
               ),
             ),
             Expanded(
-                flex: 8,
-                child: SizedBox(
-                  child: productlist.isEmpty
-                      ? Center(
-                          child: CircularProgressIndicator(),
-                        )
-                      : ListView.builder(
-                          itemCount: productlist.length,
-                          itemBuilder: (context, index) => Card(
-                            child: ListTile(
-                              title: Text(productlist[index].title!),
-                              subtitle: Text("${productlist[index].price!}"),
-                              onTap: () {
-                                Navigator.of(context).pop(productlist[index]);
-                              },
-                            ),
+              flex: 8,
+              child: FutureBuilder(
+                  future: fetchdata(),
+                  builder: (context, AsyncSnapshot<List<Product>> snapshot) {
+                    if (!snapshot.hasData) {
+                      return Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    } else {
+                      return ListView.builder(
+                        itemCount: productlist.length,
+                        itemBuilder: (context, index) => Card(
+                          child: ListTile(
+                            title: Text(snapshot.data![index].title.toString()),
+                            subtitle:
+                                Text(snapshot.data![index].price.toString()),
+                            onTap: () {
+                              Navigator.of(context).pop(snapshot.data![index]);
+                            },
                           ),
                         ),
-                ))
+                      );
+                    }
+                  }),
+            ),
           ],
         ),
       ),
