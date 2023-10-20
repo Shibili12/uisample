@@ -300,7 +300,13 @@ class _NewenquiryState extends State<Newenquiry> {
                             onDismissed: (direction) {
                               setState(() {
                                 productlist.removeAt(index);
-                                productdetails.removeAt(index);
+                                if (index >= 0 &&
+                                    index < productdetails.length) {
+                                  productdetails.removeAt(index);
+                                } else {
+                                  // Handle the case where index is out of bounds (invalid)
+                                  print('Invalid index: $index');
+                                }
                               });
                             },
                             child: ListTile(
@@ -314,16 +320,46 @@ class _NewenquiryState extends State<Newenquiry> {
                                       context, productlist[index], null),
                                 );
                               },
-                              trailing: ElevatedButton(
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (BuildContext context) =>
-                                        openPopUp(
-                                            context, productlist[index], index),
-                                  );
-                                },
-                                child: Text("Edit"),
+                              trailing: Container(
+                                width: 200,
+                                child: Row(
+                                  children: [
+                                    productdetails.isNotEmpty
+                                        ? Expanded(
+                                            child: Row(
+                                              children: [
+                                                IconButton(
+                                                  onPressed: () {
+                                                    decreaseQuantity(index);
+                                                  },
+                                                  icon: Icon(Icons
+                                                      .keyboard_arrow_left),
+                                                ),
+                                                Text(productdetails[index].qty),
+                                                IconButton(
+                                                  onPressed: () {
+                                                    increaseQuantity(index);
+                                                  },
+                                                  icon: Icon(Icons
+                                                      .keyboard_arrow_right),
+                                                ),
+                                              ],
+                                            ),
+                                          )
+                                        : SizedBox(),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) =>
+                                              openPopUp(context,
+                                                  productlist[index], index),
+                                        );
+                                      },
+                                      child: Text("Edit"),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           )),
@@ -359,7 +395,7 @@ class _NewenquiryState extends State<Newenquiry> {
     TextEditingController productcntrl =
         TextEditingController(text: product.title);
     TextEditingController pricecontroller =
-        TextEditingController(text: "\$ ${product.price}");
+        TextEditingController(text: "${product.price}");
     TextEditingController taxcontroller = TextEditingController();
 
     TextEditingController qtycontroller = TextEditingController();
@@ -566,5 +602,53 @@ class _NewenquiryState extends State<Newenquiry> {
       });
     }
     return taxamount;
+  }
+
+  void increaseQuantity(int index) {
+    setState(() {
+      try {
+        int currentQty = int.parse(productdetails[index].qty);
+        currentQty++;
+        productdetails[index].qty = currentQty.toString();
+
+        // Recalculate the total and other related fields
+        int price = int.parse(productdetails[index].price.replaceAll(r'$', ''));
+        int newTotal = currentQty * price;
+        double taxPercentage = double.parse(productdetails[index].tax);
+        double taxAmount = (taxPercentage / 100) * price;
+        double salesValue = newTotal + taxAmount;
+
+        productdetails[index].total = newTotal.toStringAsFixed(2);
+        productdetails[index].taxamound = taxAmount.toStringAsFixed(2);
+        productdetails[index].salesvalue = salesValue.toStringAsFixed(2);
+      } catch (e) {
+        print(e);
+      }
+    });
+  }
+
+  void decreaseQuantity(int index) {
+    setState(() {
+      try {
+        int currentQty = int.parse(productdetails[index].qty);
+        if (currentQty > 1) {
+          currentQty--;
+          productdetails[index].qty = currentQty.toString();
+          // Recalculate the total and other related fields
+          int price =
+              int.parse(productdetails[index].price.replaceAll(r'$', ''));
+          int newTotal = currentQty * price;
+          double taxPercentage = double.parse(productdetails[index].tax);
+          double taxAmount = (taxPercentage / 100) * price;
+          double salesValue = newTotal + taxAmount;
+
+          productdetails[index].total = newTotal.toStringAsFixed(2);
+          productdetails[index].taxamound = taxAmount.toStringAsFixed(2);
+          productdetails[index].salesvalue = salesValue.toStringAsFixed(2);
+        }
+      } catch (e) {
+        print(e);
+      }
+    });
   }
 }
