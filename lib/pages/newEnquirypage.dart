@@ -17,14 +17,27 @@ class _NewenquiryState extends State<Newenquiry> {
   TextEditingController producttext = TextEditingController();
   var productlist = [];
   List<ProductDetails> productdetails = List.empty(growable: true);
+  String discountType = 'percentage';
+  double discountValue = 0.0;
 
   void getproduct() async {
     final products = await Navigator.of(context)
         .push(MaterialPageRoute(builder: ((context) => Productpage())));
-    print(products);
-    setState(() {
-      productlist.add(products);
-    });
+
+    if (products != null) {
+      setState(() {
+        productlist.add(products);
+        ProductDetails productDetails = ProductDetails(
+            name: products.title,
+            qty: '0',
+            price: products.price.toString(),
+            total: '0',
+            tax: '5',
+            taxamound: '0',
+            salesvalue: '0');
+        productdetails.add(productDetails);
+      });
+    }
   }
 
   @override
@@ -283,7 +296,7 @@ class _NewenquiryState extends State<Newenquiry> {
               ],
             ),
             Container(
-              height: 200,
+              height: 150,
               child: productlist.isEmpty
                   ? Container()
                   : ListView.builder(
@@ -300,6 +313,7 @@ class _NewenquiryState extends State<Newenquiry> {
                             onDismissed: (direction) {
                               setState(() {
                                 productlist.removeAt(index);
+
                                 if (index >= 0 &&
                                     index < productdetails.length) {
                                   productdetails.removeAt(index);
@@ -352,8 +366,10 @@ class _NewenquiryState extends State<Newenquiry> {
                                         showDialog(
                                           context: context,
                                           builder: (BuildContext context) =>
-                                              openPopUp(context,
-                                                  productlist[index], index),
+                                              openPopUp(
+                                                  context,
+                                                  productlist[index],
+                                                  productdetails[index]),
                                         );
                                       },
                                       child: Text("Edit"),
@@ -366,21 +382,84 @@ class _NewenquiryState extends State<Newenquiry> {
                     ),
             ),
             Container(
-              height: 40,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              height: 90,
+              child: Column(
                 children: [
-                  Text(
-                    productlist.isNotEmpty
-                        ? 'Total Price: \$${calculatetotalprice(productdetails).toStringAsFixed(2)}'
-                        : "",
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  productlist.isNotEmpty
+                      ? Row(
+                          children: [
+                            SizedBox(
+                              width: 10,
+                            ),
+                            Radio(
+                              value: 'percentage',
+                              groupValue: discountType,
+                              onChanged: (String? value) {
+                                setState(() {
+                                  discountType = value!;
+                                });
+                              },
+                            ),
+                            Text('Percentage'),
+                            Radio(
+                              value: 'amount',
+                              groupValue: discountType,
+                              onChanged: (String? value) {
+                                setState(() {
+                                  discountType = value!;
+                                });
+                              },
+                            ),
+                            Text('Amount'),
+                            SizedBox(
+                              width: 20,
+                            ),
+                            SizedBox(
+                              width: 100,
+                              height: 45,
+                              child: TextField(
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  hintText: "Discount",
+                                ),
+                                keyboardType:
+                                    TextInputType.number, // Allow numeric input
+                                onChanged: (value) {
+                                  // Parse the discount value as a double
+                                  setState(() {
+                                    discountValue =
+                                        double.tryParse(value) ?? 0.0;
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        )
+                      : SizedBox(),
+                  SizedBox(
+                    height: 15,
                   ),
-                  Text(
-                    productlist.isNotEmpty
-                        ? 'Tax amount: \$${calculatetaxamount(productdetails).toStringAsFixed(2)}'
-                        : "",
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Text(
+                        productlist.isNotEmpty
+                            ? 'Grand Total(${productdetails.length} items):${calculateDiscount()} '
+                            : "",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                            fontSize: 18),
+                      ),
+                      // Text(
+                      //   productlist.isNotEmpty
+                      //       ? 'Tax amount: \$${calculatetaxamount(productdetails).toStringAsFixed(2)}'
+                      //       : "",
+                      //   style: TextStyle(fontWeight: FontWeight.bold),
+                      // ),
+                    ],
                   ),
                 ],
               ),
@@ -391,7 +470,7 @@ class _NewenquiryState extends State<Newenquiry> {
     );
   }
 
-  openPopUp(BuildContext context, product, int? index) {
+  openPopUp(BuildContext context, product, details) {
     TextEditingController productcntrl =
         TextEditingController(text: product.title);
     TextEditingController pricecontroller =
@@ -402,12 +481,12 @@ class _NewenquiryState extends State<Newenquiry> {
     TextEditingController totalcontroller = TextEditingController();
     TextEditingController taxamound = TextEditingController();
     TextEditingController salesvalue = TextEditingController();
-    if (index != null) {
-      qtycontroller.text = productdetails[index].qty;
-      totalcontroller.text = productdetails[index].total;
-      taxcontroller.text = productdetails[index].tax;
-      taxamound.text = productdetails[index].taxamound;
-      salesvalue.text = productdetails[index].salesvalue;
+    if (details != null) {
+      qtycontroller.text = details.qty ?? "";
+      totalcontroller.text = details.total ?? "";
+      taxcontroller.text = details.tax ?? "";
+      taxamound.text = details.taxamound ?? "";
+      salesvalue.text = details.salesvalue ?? "";
     }
 
     return AlertDialog(
@@ -477,7 +556,7 @@ class _NewenquiryState extends State<Newenquiry> {
                         decoration: InputDecoration(
                           // labelText: 'Tax %',
                           suffixIcon: DropdownButtonFormField(
-                            value: index != null ? taxcontroller.text : null,
+                            value: details != null ? taxcontroller.text : null,
                             decoration: const InputDecoration(
                               labelText: 'Tax %',
                               border: OutlineInputBorder(
@@ -548,22 +627,31 @@ class _NewenquiryState extends State<Newenquiry> {
                     String sales = salesvalue.text;
 
                     setState(() {
-                      if (index == null) {
-                        productdetails.add(ProductDetails(
-                            name: name,
-                            qty: qty,
-                            price: price,
-                            total: total,
-                            tax: tax,
-                            taxamound: taxamount,
-                            salesvalue: sales));
+                      if (productdetails.isEmpty ||
+                          productdetails.length < productlist.length) {
+                        // Adding a new product
+                        ProductDetails newProduct = ProductDetails(
+                          name: name,
+                          qty: qty,
+                          price: price,
+                          total: total,
+                          tax: tax,
+                          taxamound: taxamount,
+                          salesvalue: sales,
+                        );
+                        productdetails.add(newProduct);
                       } else {
-                        productdetails[index].qty = qtycontroller.text;
-                        productdetails[index].tax = taxcontroller.text;
-                        productdetails[index].total = totalcontroller.text;
-                        productdetails[index].taxamound = taxamound.text;
-                        productdetails[index].salesvalue = salesvalue.text;
+                        // Updating existing product
+
+                        details.qty = qtycontroller.text;
+                        details.tax = taxcontroller.text;
+                        details.total = totalcontroller.text;
+                        details.taxamound = taxamound.text;
+                        details.salesvalue = salesvalue.text;
                       }
+
+                      print("Index: $productdetails");
+                      print("ProductDetails Length: ${productdetails}");
                     });
 
                     Navigator.of(context).pop();
@@ -598,7 +686,8 @@ class _NewenquiryState extends State<Newenquiry> {
     double taxamount = 0.0;
     for (var element in productdetails) {
       setState(() {
-        taxamount += double.parse(element.taxamound);
+        taxamount +=
+            double.parse(element.taxamound) * double.parse(element.qty);
       });
     }
     return taxamount;
@@ -650,5 +739,17 @@ class _NewenquiryState extends State<Newenquiry> {
         print(e);
       }
     });
+  }
+
+  double calculateDiscount() {
+    double originalPrice = calculatetotalprice(productdetails) +
+        calculatetaxamount(productdetails); // Example original price
+    double discountedPrice;
+    if (discountType == 'percentage') {
+      discountedPrice = originalPrice - (originalPrice * discountValue / 100);
+    } else {
+      discountedPrice = originalPrice - discountValue;
+    }
+    return discountedPrice;
   }
 }
