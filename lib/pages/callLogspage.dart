@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:call_log/call_log.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -13,6 +14,7 @@ class CallLogsscreen extends StatefulWidget {
 
 class _CallLogsscreenState extends State<CallLogsscreen> {
   List<CallLogEntry> callLogs = [];
+  AudioPlayer audioPlayer = AudioPlayer();
 
   @override
   void initState() {
@@ -28,6 +30,12 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
     } else {
       // Handle the case where permission is denied by the user.
     }
+  }
+
+  Future<void> _playRecordings(String filepath) async {
+    await audioPlayer.stop();
+    final result = await audioPlayer.play;
+    if (result == 1) {}
   }
 
   String _getFormattedDuration(CallLogEntry callLog) {
@@ -62,6 +70,8 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
         child: ListView.separated(
           itemBuilder: (context, index) {
             final callLog = callLogs[index];
+            final recordingFilePath =
+                "/storage/emulated/0/CallRecordings/call1.mp3";
             return ListTile(
               leading: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -121,6 +131,9 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
                   ),
                 ],
               ),
+              onTap: () {
+                _playRecordings(recordingFilePath);
+              },
             );
           },
           separatorBuilder: (context, index) => Divider(),

@@ -55,6 +55,7 @@ class Product {
   String? category;
   String? thumbnail;
   List<String>? images;
+  bool isSelected;
 
   Product({
     this.id,
@@ -68,6 +69,7 @@ class Product {
     this.category,
     this.thumbnail,
     this.images,
+    this.isSelected = false,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(

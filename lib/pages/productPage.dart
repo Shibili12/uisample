@@ -15,6 +15,8 @@ class Productpage extends StatefulWidget {
 class _ProductpageState extends State<Productpage> {
   List<Product> productlist = [];
   TextEditingController serchcontroller = TextEditingController();
+  // List<Product> selectedProducts = [];
+  Set<Product> selectedProducts = {};
 
   Future<List<Product>> fetchdata() async {
     var url = Uri.parse("https://dummyjson.com/products");
@@ -24,6 +26,9 @@ class _ProductpageState extends State<Productpage> {
       Productmodel productmodel = Productmodel.fromJson(jsonData);
       setState(() {
         productlist = productmodel.products!;
+        // for (var product in productlist) {
+        //   product.isSelected = selectedProductsMap[product.id] ?? false;
+        // }
       });
       return productlist;
     } else {
@@ -71,15 +76,55 @@ class _ProductpageState extends State<Productpage> {
                             title: Text(snapshot.data![index].title.toString()),
                             subtitle:
                                 Text(snapshot.data![index].price.toString()),
-                            onTap: () {
-                              Navigator.of(context).pop(snapshot.data![index]);
-                            },
+                            trailing: Checkbox(
+                              value: selectedProducts
+                                  .contains(snapshot.data![index]),
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  final product = snapshot.data![index];
+                                  print(
+                                      "Checkbox changed for: ${snapshot.data![index].title}");
+                                  if (value == true &&
+                                      !selectedProducts.contains(product)) {
+                                    selectedProducts.add(product);
+                                    product.isSelected = true;
+                                  } else {
+                                    selectedProducts.remove(product);
+                                    product.isSelected = false;
+                                  }
+
+                                  // getSelectedProducts();
+                                });
+                              },
+                            ),
                           ),
                         ),
                       );
                     }
                   }),
             ),
+            Expanded(
+                child: SizedBox(
+              width: double.infinity,
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  left: 20,
+                  right: 20,
+                  top: 8,
+                  bottom: 8,
+                ),
+                child: ElevatedButton(
+                  onPressed: () {
+                    print(selectedProducts.length);
+
+                    Navigator.of(context).pop(
+                      selectedProducts.toList(),
+                    );
+                  },
+                  child: Text("ADD"),
+                ),
+              ),
+            )),
           ],
         ),
       ),
@@ -96,4 +141,21 @@ class _ProductpageState extends State<Productpage> {
       productlist = suggestions;
     });
   }
+
+  // void getSelectedProducts() {
+  //   selectedProducts.clear();
+  //   for (var product in productlist) {
+  //     // if (selectedProducts.contains(product)) {
+  //     //   selectedProducts.clear();
+  //     // }
+  //     if (product.isSelected) {
+  //       selectedProducts.add(product);
+  //     }
+  //   }
+
+  //   print("Selected products count: ${selectedProducts.length}");
+  //   for (var product in selectedProducts) {
+  //     print("Selected product: ${product.title}");
+  //   }
+  // }
 }

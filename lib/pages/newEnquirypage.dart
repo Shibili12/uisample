@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import 'package:uisample/pages/productPage.dart';
 import 'package:uisample/productdetails.dart';
 
@@ -26,16 +27,18 @@ class _NewenquiryState extends State<Newenquiry> {
 
     if (products != null) {
       setState(() {
-        productlist.add(products);
-        ProductDetails productDetails = ProductDetails(
-            name: products.title,
-            qty: '0',
-            price: products.price.toString(),
-            total: '0',
-            tax: '5',
-            taxamound: '0',
-            salesvalue: '0');
-        productdetails.add(productDetails);
+        productlist = products;
+        for (var selectedProduct in products) {
+          ProductDetails productDetails = ProductDetails(
+              name: selectedProduct.title!,
+              qty: '0',
+              price: selectedProduct.price.toString(),
+              total: '0',
+              tax: '5',
+              taxamound: '0',
+              salesvalue: '0');
+          productdetails.add(productDetails);
+        }
       });
     }
   }
@@ -295,14 +298,17 @@ class _NewenquiryState extends State<Newenquiry> {
                 )),
               ],
             ),
-            Container(
+            SizedBox(
               height: 150,
               child: productlist.isEmpty
                   ? Container()
-                  : ListView.builder(
-                      itemCount: productlist.length,
-                      itemBuilder: ((context, index) => Dismissible(
-                            key: Key("${productlist[index].id}"),
+                  : SingleChildScrollView(
+                      child: Column(
+                        children: productlist.asMap().entries.map((entry) {
+                          final index = entry.key;
+                          final selectedproduct = entry.value;
+                          return Dismissible(
+                            key: Key("${selectedproduct.id}"),
                             background: Container(
                               color: Colors.red,
                               child: Center(
@@ -324,14 +330,13 @@ class _NewenquiryState extends State<Newenquiry> {
                               });
                             },
                             child: ListTile(
-                              title: Text(productlist[index].title ?? ""),
-                              subtitle: Text(
-                                  "Price:${productlist[index].price}" ?? ""),
+                              title: Text(selectedproduct.title),
+                              subtitle: Text("Price:${selectedproduct.price}"),
                               onTap: () {
                                 showDialog(
                                   context: context,
-                                  builder: (BuildContext context) => openPopUp(
-                                      context, productlist[index], null),
+                                  builder: (BuildContext context) =>
+                                      openPopUp(context, selectedproduct, null),
                                 );
                               },
                               trailing: Container(
@@ -378,10 +383,12 @@ class _NewenquiryState extends State<Newenquiry> {
                                 ),
                               ),
                             ),
-                          )),
+                          );
+                        }).toList(),
+                      ),
                     ),
             ),
-            Container(
+            SizedBox(
               height: 90,
               child: Column(
                 children: [
