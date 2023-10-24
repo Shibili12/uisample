@@ -1,10 +1,16 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:call_log/call_log.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 // import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 class CallLogsscreen extends StatefulWidget {
   const CallLogsscreen({super.key});
@@ -120,6 +126,15 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
       appBar: AppBar(
         centerTitle: true,
         title: const Text("Call Logs"),
+        actions: [
+          IconButton(
+            onPressed: () async {
+              final pdfBytes = genarateCallLogPdf(callLogs);
+              // await savePdfToStorage(pdfBytes, 'call_logs_report');
+            },
+            icon: Icon(Icons.ios_share_outlined),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -269,5 +284,38 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
       player.dispose();
     }
     super.dispose();
+  }
+
+  Future<Uint8List> genarateCallLogPdf(List<CallLogEntry> callLogs) async {
+    final pdf = pw.Document();
+    pdf.addPage(pw.MultiPage(build: (context) {
+      return [
+        pw.Header(
+          level: 0,
+          child: pw.Text('Call Logs Report'),
+        ),
+        for (final callLog in callLogs)
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('Name: ${callLog.name ?? "Unknown"}'),
+              pw.Text('Number: ${callLog.number ?? ""}'),
+              pw.Text('Type: ${callLog.callType.toString().split('.').last}'),
+              pw.Text('Date: ${callLog.timestamp}'),
+              pw.Text('Duration: ${callLog.duration} seconds'),
+              pw.Divider(),
+            ],
+          ),
+      ];
+    }));
+    final bytes = await pdf.save();
+    return bytes;
+  }
+
+  Future<void> savePdfToStorage(Uint8List pdfBytes, String fileName) async {
+    final dir =
+        await getExternalStorageDirectory(); // You can change the directory as needed
+    final file = File('${dir?.path}/$fileName.pdf');
+    await file.writeAsBytes(pdfBytes);
   }
 }
