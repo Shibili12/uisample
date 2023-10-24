@@ -1,9 +1,10 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:call_log/call_log.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+// import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter/services.dart';
 
 class CallLogsscreen extends StatefulWidget {
   const CallLogsscreen({super.key});
@@ -14,7 +15,12 @@ class CallLogsscreen extends StatefulWidget {
 
 class _CallLogsscreenState extends State<CallLogsscreen> {
   List<CallLogEntry> callLogs = [];
-  AudioPlayer audioPlayer = AudioPlayer();
+  List<AudioPlayer> audioPlayers = [];
+  List<PlatformFile> pickedFiles = [];
+  List<bool> isPlaying = [];
+  List<Duration> duration = [];
+  List<Duration> position = [];
+  int currentlyPlayingIndex = -1;
 
   @override
   void initState() {
@@ -26,17 +32,66 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
     final status = await Permission.phone.request();
     if (status.isGranted) {
       callLogs = (await CallLog.get()).toList();
-      setState(() {});
+      setState(() {
+        audioPlayers = List.generate(callLogs.length, (index) => AudioPlayer());
+        isPlaying = List.generate(callLogs.length, (index) => false);
+        duration = List.generate(callLogs.length, (index) => Duration.zero);
+        position = List.generate(callLogs.length, (index) => Duration.zero);
+      });
     } else {
       // Handle the case where permission is denied by the user.
     }
   }
 
-  Future<void> _playRecordings(String filepath) async {
-    await audioPlayer.stop();
-    final result = await audioPlayer.play;
-    if (result == 1) {}
+  Future<void> pickandstoreFiles() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(allowMultiple: true);
+      if (result != null) {
+        setState(() {
+          pickedFiles = result.files;
+        });
+      }
+    } catch (e) {}
   }
+
+  void _playRecordings(PlatformFile pickedFil, int index) async {
+    if (currentlyPlayingIndex == index) {
+      audioPlayers[index].pause();
+      setState(() {
+        isPlaying[index] = false;
+        currentlyPlayingIndex = -1;
+      });
+    } else {
+      audioPlayers[index].play(DeviceFileSource(pickedFil.path!));
+      setState(() {
+        isPlaying[index] = true;
+        currentlyPlayingIndex = index;
+      });
+      audioPlayers[index].onDurationChanged.listen((newduration) {
+        setState(() {
+          duration[index] = newduration;
+        });
+      });
+      audioPlayers[index].onPositionChanged.listen((newPosition) {
+        setState(() {
+          position[index] = newPosition;
+        });
+      });
+    }
+  }
+
+  Future<void> seekAudio(int index, double value) async {
+    final positionDuration = Duration(seconds: value.toInt());
+    await audioPlayers[index].seek(positionDuration);
+  }
+
+  // Future<void> _resumeAudio() async {
+  //   await audioPlayer.resume();
+  // }
+
+  // Future<void> pauseAudio() async {
+  //   await audioPlayer.pause();
+  // }
 
   String _getFormattedDuration(CallLogEntry callLog) {
     final int duration = callLog.duration ?? 0;
@@ -64,82 +119,155 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: Text("Call Logs"),
+        title: const Text("Call Logs"),
       ),
       body: SafeArea(
-        child: ListView.separated(
-          itemBuilder: (context, index) {
-            final callLog = callLogs[index];
-            final recordingFilePath =
-                "/storage/emulated/0/CallRecordings/call1.mp3";
-            return ListTile(
-              leading: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Expanded(
-                    // flex: 1,
-                    child: Text(
-                      year,
-                      style: TextStyle(
-                          fontSize: 15,
-                          color: Colors.yellow[600],
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: Text(
-                      day,
-                      style: TextStyle(
-                          fontSize: 25,
-                          color: Colors.blue[600],
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  Expanded(
-                    // flex: 1,
-                    child: Text(
-                      month,
-                      style: TextStyle(
-                          fontSize: 15,
-                          color: Colors.red[600],
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
+        child: Column(
+          children: [
+            Expanded(
+              child: SizedBox(
+                height: 700,
+                child: ListView.separated(
+                  itemBuilder: (context, index) {
+                    final callLog = callLogs[index];
+
+                    return ExpansionTile(
+                      leading: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Expanded(
+                            // flex: 1,
+                            child: Text(
+                              year,
+                              style: TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.yellow[600],
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Text(
+                              day,
+                              style: TextStyle(
+                                  fontSize: 25,
+                                  color: Colors.blue[600],
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          Expanded(
+                            // flex: 1,
+                            child: Text(
+                              month,
+                              style: TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.red[600],
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                      title: Text(callLog.name ?? "Unknown"),
+                      subtitle: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(callLog.number ?? ""),
+                          // Text(pickedFiles[index].name)
+                        ],
+                      ),
+                      key: ValueKey(index),
+                      trailing: Wrap(
+                        direction: Axis.vertical,
+                        children: [
+                          Text(
+                            _getFormattedDuration(callLog),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(
+                            height: 8,
+                          ),
+                          Icon(
+                            Icons.call,
+                            size: 20,
+                            color: callLog.callType == CallType.incoming
+                                ? Colors.blue
+                                : callLog.callType == CallType.outgoing
+                                    ? Colors.green
+                                    : Colors.red,
+                          ),
+                        ],
+                      ),
+                      children: [
+                        Row(
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                _playRecordings(pickedFiles[index], index);
+                              },
+                              icon: Icon(isPlaying[index]
+                                  ? Icons.pause
+                                  : Icons.play_arrow),
+                            ),
+                            Expanded(
+                              flex: 6,
+                              child: Slider(
+                                min: 0,
+                                max: duration[index].inSeconds.toDouble(),
+                                value: position[index].inSeconds.toDouble(),
+                                onChanged: (value) {
+                                  seekAudio(index, value);
+                                },
+                              ),
+                            ),
+                            Expanded(
+                                flex: 1,
+                                child: Text(formattime(
+                                    duration[index] - position[index]))),
+                          ],
+                        )
+                      ],
+                    );
+                  },
+                  separatorBuilder: (context, index) => const Divider(),
+                  itemCount: callLogs.length,
+                ),
               ),
-              title: Text(callLog.name ?? "Unknown"),
-              subtitle: Text(callLog.number ?? ""),
-              trailing: Wrap(
-                direction: Axis.vertical,
-                children: [
-                  Text(
-                    _getFormattedDuration(callLog),
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(
-                    height: 8,
-                  ),
-                  Icon(
-                    Icons.call,
-                    size: 20,
-                    color: callLog.callType == CallType.incoming
-                        ? Colors.blue
-                        : callLog.callType == CallType.outgoing
-                            ? Colors.green
-                            : Colors.red,
-                  ),
-                ],
-              ),
-              onTap: () {
-                _playRecordings(recordingFilePath);
-              },
-            );
-          },
-          separatorBuilder: (context, index) => Divider(),
-          itemCount: callLogs.length,
+            ),
+            pickedFiles.isEmpty
+                ? SizedBox(
+                    height: 100,
+                    width: double.infinity,
+                    child: Padding(
+                      padding: const EdgeInsets.all(13.0),
+                      child: ElevatedButton(
+                          onPressed: () {
+                            pickandstoreFiles();
+                            print(pickedFiles.length);
+                          },
+                          child: const Text("data")),
+                    ),
+                  )
+                : const SizedBox(),
+          ],
         ),
       ),
     );
+  }
+
+  String formattime(Duration duration) {
+    String twodigit(int n) => n.toString().padLeft(2, '0');
+    final hours = twodigit(duration.inHours);
+    final minutes = twodigit(duration.inMinutes.remainder(60));
+    final seconds = twodigit(duration.inSeconds.remainder(60));
+    return [if (duration.inHours > 0) hours, minutes, seconds].join(':');
+  }
+
+  @override
+  void dispose() {
+    for (final player in audioPlayers) {
+      player.dispose();
+    }
+    super.dispose();
   }
 }
