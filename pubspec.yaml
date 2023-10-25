@@ -50,6 +50,9 @@ dependencies:
   path_provider: ^2.1.1
   file_picker: ^6.0.0
   pdf: ^3.10.4
+  open_document: ^1.0.7
+  url_launcher: ^6.2.0
+  open_file: ^3.3.2
   # firebase_analytics: ^10.6.1
 
 dev_dependencies:

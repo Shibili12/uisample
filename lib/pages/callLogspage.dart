@@ -6,8 +6,10 @@ import 'package:call_log/call_log.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:open_file/open_file.dart';
+
 import 'package:path_provider/path_provider.dart';
-// import 'package:path_provider/path_provider.dart';
+
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -91,14 +93,6 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
     await audioPlayers[index].seek(positionDuration);
   }
 
-  // Future<void> _resumeAudio() async {
-  //   await audioPlayer.resume();
-  // }
-
-  // Future<void> pauseAudio() async {
-  //   await audioPlayer.pause();
-  // }
-
   String _getFormattedDuration(CallLogEntry callLog) {
     final int duration = callLog.duration ?? 0;
     final Duration d1 = Duration(seconds: duration);
@@ -129,8 +123,9 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
         actions: [
           IconButton(
             onPressed: () async {
-              final pdfBytes = genarateCallLogPdf(callLogs);
-              // await savePdfToStorage(pdfBytes, 'call_logs_report');
+              final pdfBytes = await genarateCallLogPdf(callLogs);
+              // print(pdfBytes);
+              await savePdfToStorage(pdfBytes, 'calllogs_report');
             },
             icon: Icon(Icons.ios_share_outlined),
           ),
@@ -301,21 +296,26 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
               pw.Text('Name: ${callLog.name ?? "Unknown"}'),
               pw.Text('Number: ${callLog.number ?? ""}'),
               pw.Text('Type: ${callLog.callType.toString().split('.').last}'),
-              pw.Text('Date: ${callLog.timestamp}'),
+              // pw.Text('Date: ${callLog.timestamp}'),
               pw.Text('Duration: ${callLog.duration} seconds'),
               pw.Divider(),
             ],
           ),
       ];
     }));
+
     final bytes = await pdf.save();
+
     return bytes;
   }
 
   Future<void> savePdfToStorage(Uint8List pdfBytes, String fileName) async {
-    final dir =
-        await getExternalStorageDirectory(); // You can change the directory as needed
-    final file = File('${dir?.path}/$fileName.pdf');
-    await file.writeAsBytes(pdfBytes);
+    final status = await Permission.storage.request();
+    if (status.isGranted) {
+      final dir = await getExternalStorageDirectory();
+      final file = File('${dir?.path}/$fileName.pdf');
+      await file.writeAsBytes(pdfBytes);
+      await OpenFile.open(file.path);
+    }
   }
 }
