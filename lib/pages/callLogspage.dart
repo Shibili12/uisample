@@ -283,6 +283,7 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
 
   Future<Uint8List> genarateCallLogPdf(List<CallLogEntry> callLogs) async {
     final pdf = pw.Document();
+
     pdf.addPage(pw.MultiPage(build: (context) {
       return [
         pw.Header(
@@ -296,7 +297,8 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
               pw.Text('Name: ${callLog.name ?? "Unknown"}'),
               pw.Text('Number: ${callLog.number ?? ""}'),
               pw.Text('Type: ${callLog.callType.toString().split('.').last}'),
-              // pw.Text('Date: ${callLog.timestamp}'),
+              pw.Text(
+                  'Date: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.fromMillisecondsSinceEpoch(callLog.timestamp!))}'),
               pw.Text('Duration: ${callLog.duration} seconds'),
               pw.Divider(),
             ],
