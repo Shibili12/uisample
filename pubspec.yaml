@@ -53,6 +53,7 @@ dependencies:
   open_document: ^1.0.7
   url_launcher: ^6.2.0
   open_file: ^3.3.2
+  flutter_local_notifications: ^16.1.0
   # firebase_analytics: ^10.6.1
 
 dev_dependencies:

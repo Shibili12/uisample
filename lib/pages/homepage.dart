@@ -1,10 +1,15 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uisample/firebase_services/firebasenotification.dart';
+import 'package:uisample/main.dart';
 import 'package:uisample/pages/callLogspage.dart';
 import 'package:uisample/pages/loginpage.dart';
 import 'package:uisample/pages/newEnquirypage.dart';
+import 'package:uisample/pages/notificationpage.dart';
 import 'package:uisample/widegets/hometile.dart';
 
 class Myhomepage extends StatefulWidget {
@@ -48,10 +53,24 @@ class _MyhomepageState extends State<Myhomepage> {
     }
   }
 
+  NotificationServices notificationServices = NotificationServices();
+
   @override
   void initState() {
     getuser();
     super.initState();
+    notificationServices.requestNotificationPermission();
+    notificationServices.forgroundMessage();
+    notificationServices.firebaseInit(context);
+    notificationServices.setupInteractMessage(context);
+    notificationServices.isTokenRefresh();
+
+    notificationServices.getDeviceToken().then((value) {
+      if (kDebugMode) {
+        print('device token');
+        print(value);
+      }
+    });
   }
 
   void getuser() async {
@@ -74,7 +93,7 @@ class _MyhomepageState extends State<Myhomepage> {
             icon: const Icon(Icons.task_alt),
           ),
           IconButton(
-            onPressed: () {},
+            onPressed: () async {},
             icon: const Badge(
               label: Text('2'),
               child: Icon(Icons.notifications),

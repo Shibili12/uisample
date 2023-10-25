@@ -1,12 +1,18 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
-class NotificationPage extends StatelessWidget {
-  const NotificationPage({super.key});
+class NotificationPage extends StatefulWidget {
+  RemoteMessage notification;
+
+  NotificationPage({super.key, required this.notification});
 
   @override
+  State<NotificationPage> createState() => _NotificationPageState();
+}
+
+class _NotificationPageState extends State<NotificationPage> {
+  @override
   Widget build(BuildContext context) {
-    final message = ModalRoute.of(context)!.settings.arguments as RemoteMessage;
     return Scaffold(
       appBar: AppBar(
         title: Text("Notification"),
@@ -14,9 +20,9 @@ class NotificationPage extends StatelessWidget {
       body: Column(
         children: [
           ListTile(
-            title: Text(message.notification!.title.toString()),
-            subtitle: Text(message.notification!.body.toString()),
-          ),
+              // title: Text(widget.notification.notification!.body!),
+              // subtitle: Text(widget.notification.body!),
+              ),
         ],
       ),
     );

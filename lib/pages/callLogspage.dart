@@ -13,6 +13,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CallLogsscreen extends StatefulWidget {
   const CallLogsscreen({super.key});
@@ -29,11 +30,21 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
   List<Duration> duration = [];
   List<Duration> position = [];
   int currentlyPlayingIndex = -1;
+  late SharedPreferences preferences;
+  late String username;
 
   @override
   void initState() {
     super.initState();
     _fetchCallLogs();
+    getuser();
+  }
+
+  void getuser() async {
+    preferences = await SharedPreferences.getInstance();
+    setState(() {
+      username = preferences.getString('username')!;
+    });
   }
 
   Future<void> _fetchCallLogs() async {
@@ -288,21 +299,46 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
       return [
         pw.Header(
           level: 0,
-          child: pw.Text('Call Logs Report'),
+          child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text("User : $username"),
+                pw.Text(
+                    "Date : ${DateFormat('dd-MM-yyyy').format(DateTime.now())}"),
+              ]),
         ),
-        for (final callLog in callLogs)
-          pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text('Name: ${callLog.name ?? "Unknown"}'),
-              pw.Text('Number: ${callLog.number ?? ""}'),
-              pw.Text('Type: ${callLog.callType.toString().split('.').last}'),
-              pw.Text(
-                  'Date: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.fromMillisecondsSinceEpoch(callLog.timestamp!))}'),
-              pw.Text('Duration: ${callLog.duration} seconds'),
-              pw.Divider(),
-            ],
-          ),
+        pw.Table(
+          border: pw.TableBorder.all(),
+          children: [
+            pw.TableRow(children: [
+              pw.Text("Name",
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+              pw.Text("Number",
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+              pw.Text("Type",
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+              pw.Text("date",
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+              pw.Text("Time",
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+              pw.Text("Duration",
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+            ]),
+            for (final callLog in callLogs)
+              pw.TableRow(
+                children: [
+                  pw.Text(callLog.name ?? "Unknown"),
+                  pw.Text(callLog.number ?? ""),
+                  pw.Text(callLog.callType.toString().split('.').last),
+                  pw.Text(DateFormat('yyyy-MM-dd').format(
+                      DateTime.fromMillisecondsSinceEpoch(callLog.timestamp!))),
+                  pw.Text(DateFormat('HH:mm:ss').format(
+                      DateTime.fromMillisecondsSinceEpoch(callLog.timestamp!))),
+                  pw.Text('${callLog.duration} seconds'),
+                ],
+              ),
+          ],
+        ),
       ];
     }));
 
