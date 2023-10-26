@@ -28,6 +28,7 @@ class _MyhomepageState extends State<Myhomepage> {
   String currentadress = "";
   late SharedPreferences preferences;
   late String username;
+
   Future<Position> _getCurrentlocation() async {
     servicepermission = await Geolocator.isLocationServiceEnabled();
     if (!servicepermission) {
@@ -54,22 +55,30 @@ class _MyhomepageState extends State<Myhomepage> {
   }
 
   NotificationServices notificationServices = NotificationServices();
-
+  List<RemoteMessage> notificationlist = [];
   @override
   void initState() {
     getuser();
     super.initState();
     notificationServices.requestNotificationPermission();
     notificationServices.forgroundMessage();
-    notificationServices.firebaseInit(context);
-    notificationServices.setupInteractMessage(context);
-    notificationServices.isTokenRefresh();
 
+    notificationServices.isTokenRefresh();
+    // setState(() {
+    //   notificationlist = notificationServices.notificationslist;
+    // });
     notificationServices.getDeviceToken().then((value) {
       if (kDebugMode) {
         print('device token');
         print(value);
       }
+    });
+    notificationServices.firebaseInit(context);
+    notificationServices.setupInteractMessage(context);
+    FirebaseMessaging.onMessage.listen((message) {
+      setState(() {
+        notificationlist.add(message);
+      });
     });
   }
 
@@ -93,9 +102,17 @@ class _MyhomepageState extends State<Myhomepage> {
             icon: const Icon(Icons.task_alt),
           ),
           IconButton(
-            onPressed: () async {},
-            icon: const Badge(
-              label: Text('2'),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => NotificationPage(
+                          notifications: notificationlist,
+                        )),
+              );
+            },
+            icon: Badge(
+              label: Text('${notificationlist.length}'),
               child: Icon(Icons.notifications),
             ),
           ),

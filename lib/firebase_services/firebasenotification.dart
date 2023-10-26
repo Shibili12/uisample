@@ -4,6 +4,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:uisample/pages/newEnquirypage.dart';
 
 import 'package:uisample/pages/notificationpage.dart';
 
@@ -14,6 +15,8 @@ class NotificationServices {
   //initialising firebase message plugin
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+
+  List<RemoteMessage> notificationslist = [];
 
   //function to initialise flutter local notification plugin to show notifications for android when app is active
   void initLocalNotifications(
@@ -36,6 +39,8 @@ class NotificationServices {
     FirebaseMessaging.onMessage.listen((message) {
       RemoteNotification? notification = message.notification;
       AndroidNotification? android = message.notification!.android;
+
+      notificationslist.add(message);
 
       if (kDebugMode) {
         print("notifications title:${notification!.title}");
@@ -148,13 +153,18 @@ class NotificationServices {
   }
 
   void handleMessage(BuildContext context, RemoteMessage message) {
-    if (message.data['type'] == 'msg') {
+    if (message.data['type'] == 'Enquiry') {
+      // notificationslist.add(message);
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => Newenquiry()));
+    } else {
       Navigator.push(
           context,
           MaterialPageRoute(
-              builder: (context) => NotificationPage(notification: message
-                  // id: message.data['id'] ,
-                  )));
+              builder: (context) =>
+                  NotificationPage(notifications: notificationslist
+                      // id: message.data['id'] ,
+                      )));
     }
   }
 
