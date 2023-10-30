@@ -4,8 +4,10 @@ import 'dart:typed_data';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:call_log/call_log.dart';
 import 'package:file_picker/file_picker.dart';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:on_audio_query/on_audio_query.dart';
 import 'package:open_file/open_file.dart';
 
 import 'package:path_provider/path_provider.dart';
@@ -25,20 +27,39 @@ class CallLogsscreen extends StatefulWidget {
 class _CallLogsscreenState extends State<CallLogsscreen> {
   List<CallLogEntry> callLogs = [];
   List<AudioPlayer> audioPlayers = [];
-  List<PlatformFile> pickedFiles = [];
+  List<Uint8List> pickedFiles = [];
   List<bool> isPlaying = [];
   List<Duration> duration = [];
   List<Duration> position = [];
   int currentlyPlayingIndex = -1;
   late SharedPreferences preferences;
   late String username;
+  late bool newpath;
+  late String path;
+
+  final audioQuery = OnAudioQuery();
 
   @override
   void initState() {
     super.initState();
+    pickandstoreFiles();
+    // check_user_set_path();
     _fetchCallLogs();
+
     getuser();
   }
+
+  // void check_user_set_path() async {
+  //   preferences = await SharedPreferences.getInstance();
+  //   newpath = preferences.getBool('newpath') ?? true;
+  //   if (newpath == false) {
+  //     setState(() {
+  //       path = preferences.getString('filePathKey')!;
+  //     });
+  //   } else {
+  //     pickandstoreFiles();
+  //   }
+  // }
 
   void getuser() async {
     preferences = await SharedPreferences.getInstance();
@@ -51,6 +72,7 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
     final status = await Permission.phone.request();
     if (status.isGranted) {
       callLogs = (await CallLog.get()).toList();
+
       setState(() {
         audioPlayers = List.generate(callLogs.length, (index) => AudioPlayer());
         isPlaying = List.generate(callLogs.length, (index) => false);
@@ -63,17 +85,42 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
   }
 
   Future<void> pickandstoreFiles() async {
-    try {
-      final result = await FilePicker.platform.pickFiles(allowMultiple: true);
-      if (result != null) {
-        setState(() {
-          pickedFiles = result.files;
-        });
+    preferences = await SharedPreferences.getInstance();
+
+    final status = await Permission.storage.request();
+    if (status.isGranted) {
+      String? directoryPath = await FilePicker.platform.getDirectoryPath();
+      if (directoryPath != null) {
+        await preferences.setString('filePathKey', directoryPath);
+        await preferences.setBool('newpath', false);
+        Directory directory = Directory(directoryPath);
+        List<FileSystemEntity> files = directory.listSync();
+        for (FileSystemEntity file in files) {
+          if (file is File) {
+            String filePath = file.path;
+            Uint8List? content = await readFromfile(filePath);
+
+            pickedFiles.add(content!);
+          }
+        }
       }
-    } catch (e) {}
+    }
   }
 
-  void _playRecordings(PlatformFile pickedFil, int index) async {
+  Future<Uint8List?> readFromfile(String pickedFilePath) async {
+    try {
+      File file = File(pickedFilePath);
+
+      if (pickedFilePath.endsWith('.mp3')) {
+        Uint8List content = await file.readAsBytes();
+        return content;
+      }
+    } catch (e) {
+      print('Error reading file: $e');
+    }
+  }
+
+  void _playRecordings(Uint8List pickedFil, int index) async {
     if (currentlyPlayingIndex == index) {
       audioPlayers[index].pause();
       setState(() {
@@ -81,7 +128,10 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
         currentlyPlayingIndex = -1;
       });
     } else {
-      audioPlayers[index].play(DeviceFileSource(pickedFil.path!));
+      Uint8List audioData = pickedFil;
+      String audioFilePath = await createTemporaryAudioFile(audioData);
+
+      audioPlayers[index].play(DeviceFileSource(audioFilePath));
       setState(() {
         isPlaying[index] = true;
         currentlyPlayingIndex = index;
@@ -122,11 +172,15 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
+    int index = 0;
+    // final now = DateTime.now();
     // final formattedDate = DateFormat('yyyy-MM-dd').format(now);
-    final year = DateFormat('y').format(now);
-    final month = DateFormat('MMM').format(now);
-    final day = DateFormat('d').format(now);
+    final year = DateFormat('y').format(
+        DateTime.fromMillisecondsSinceEpoch(callLogs[index].timestamp!));
+    final month = DateFormat('MMM').format(
+        DateTime.fromMillisecondsSinceEpoch(callLogs[index].timestamp!));
+    final day = DateFormat('d').format(
+        DateTime.fromMillisecondsSinceEpoch(callLogs[index].timestamp!));
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -220,10 +274,18 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
                         ],
                       ),
                       children: [
+                        // pickedFiles.isEmpty
+                        //     ? SizedBox(
+                        //         child: Center(
+                        //           child: Text("No recordings Available"),
+                        //         ),
+                        //       )
+                        //     :
                         Row(
                           children: [
                             IconButton(
                               onPressed: () {
+                                print(pickedFiles[index]);
                                 _playRecordings(pickedFiles[index], index);
                               },
                               icon: Icon(isPlaying[index]
@@ -255,21 +317,21 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
                 ),
               ),
             ),
-            pickedFiles.isEmpty
-                ? SizedBox(
-                    height: 100,
-                    width: double.infinity,
-                    child: Padding(
-                      padding: const EdgeInsets.all(13.0),
-                      child: ElevatedButton(
-                          onPressed: () {
-                            pickandstoreFiles();
-                            print(pickedFiles.length);
-                          },
-                          child: const Text("data")),
-                    ),
-                  )
-                : const SizedBox(),
+            // pickedFiles.isEmpty
+            //     ? SizedBox(
+            //         height: 100,
+            //         width: double.infinity,
+            //         child: Padding(
+            //           padding: const EdgeInsets.all(13.0),
+            //           child: ElevatedButton(
+            //               onPressed: () {
+            //                 pickandstoreFiles();
+            //                 print(pickedFiles.length);
+            //               },
+            //               child: const Text("data")),
+            //         ),
+            //       )
+            //     : const SizedBox(),
           ],
         ),
       ),
@@ -355,5 +417,15 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
       await file.writeAsBytes(pdfBytes);
       await OpenFile.open(file.path);
     }
+  }
+
+  Future<String> createTemporaryAudioFile(Uint8List uint8List) async {
+    final directory = await getTemporaryDirectory();
+    final file = File('${directory.path}/temp_audio.mp3');
+
+    // Write the Uint8List to the file
+    await file.writeAsBytes(uint8List);
+
+    return file.path;
   }
 }
