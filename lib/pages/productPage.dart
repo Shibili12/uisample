@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:uisample/model/product.dart';
 import 'package:uisample/model/productmodel.dart';
 
 import 'package:http/http.dart' as http;
@@ -17,23 +19,53 @@ class _ProductpageState extends State<Productpage> {
   TextEditingController serchcontroller = TextEditingController();
   // List<Product> selectedProducts = [];
   Set<Product> selectedProducts = {};
+  late Box<ProductDb> productBox;
 
-  Future<List<Product>> fetchdata() async {
-    var url = Uri.parse("https://dummyjson.com/products");
-    var response = await http.get(url);
-    if (response.statusCode == 200) {
-      var jsonData = json.decode(response.body);
-      Productmodel productmodel = Productmodel.fromJson(jsonData);
+  Future fetchAndCacheData() async {
+    if (productBox.isNotEmpty) {
+      // If there is cached data, use it.
       setState(() {
-        productlist = productmodel.products!;
-        // for (var product in productlist) {
-        //   product.isSelected = selectedProductsMap[product.id] ?? false;
-        // }
+        productlist = productBox.values.map((productDb) {
+          return Product(
+            id: productDb.id,
+            title: productDb.title,
+            price: productDb.price,
+          );
+        }).toList();
       });
-      return productlist;
     } else {
-      return productlist;
+      // If there is no cached data, fetch it from the API.
+      var url = Uri.parse("https://dummyjson.com/products");
+      var response = await http.get(url);
+      if (response.statusCode == 200) {
+        var jsonData = json.decode(response.body);
+        Productmodel productmodel = Productmodel.fromJson(jsonData);
+        setState(() {
+          productlist = productmodel.products!;
+          // Cache the fetched data in Hive.
+          productBox.clear();
+          productBox.addAll(productlist.map((product) {
+            return ProductDb(
+              id: product.id!,
+              title: product.title!,
+              price: product.price!,
+            );
+          }));
+        });
+      }
     }
+    return productlist;
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    Hive.openBox<ProductDb>('productBox').then((box) {
+      productBox = box;
+      // Fetch and update products here.
+      fetchAndCacheData();
+    });
   }
 
   @override
@@ -62,8 +94,8 @@ class _ProductpageState extends State<Productpage> {
             Expanded(
               flex: 8,
               child: FutureBuilder(
-                  future: fetchdata(),
-                  builder: (context, AsyncSnapshot<List<Product>> snapshot) {
+                  future: fetchAndCacheData(),
+                  builder: (context, snapshot) {
                     if (!snapshot.hasData) {
                       return Center(
                         child: CircularProgressIndicator(),

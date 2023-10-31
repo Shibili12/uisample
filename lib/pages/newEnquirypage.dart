@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:uisample/model/enquiry.dart';
+import 'package:uisample/model/product.dart';
+import 'package:uisample/model/productmodel.dart';
 
 import 'package:uisample/pages/productPage.dart';
 import 'package:uisample/productdetails.dart';
@@ -16,10 +21,24 @@ class _NewenquiryState extends State<Newenquiry> {
   TextEditingController expdate = TextEditingController();
   TextEditingController timecontroller = TextEditingController();
   TextEditingController producttext = TextEditingController();
+  TextEditingController primary = TextEditingController();
+  TextEditingController name = TextEditingController();
+  TextEditingController secondary = TextEditingController();
+  TextEditingController whatsapp = TextEditingController();
+  TextEditingController outside = TextEditingController();
+  TextEditingController location = TextEditingController();
+  TextEditingController refered = TextEditingController();
+  TextEditingController taguser = TextEditingController();
+  TextEditingController email = TextEditingController();
+  TextEditingController source = TextEditingController();
+  TextEditingController assigned = TextEditingController();
+
   var productlist = [];
   List<ProductDetails> productdetails = List.empty(growable: true);
   String discountType = 'percentage';
   double discountValue = 0.0;
+  late Box<Enquiry> enquiryBox;
+  List<Enquiry> saveddata = [];
 
   void getproduct() async {
     final products = await Navigator.of(context)
@@ -44,6 +63,105 @@ class _NewenquiryState extends State<Newenquiry> {
   }
 
   @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _initializeHive();
+  }
+
+  Future<void> _initializeHive() async {
+    await Hive.initFlutter();
+    await Hive.openBox<Enquiry>('enquiryBox');
+    enquiryBox = Hive.box<Enquiry>('enquiryBox');
+    saveddata = enquiryBox.values.toList();
+
+    setState(() {});
+    if (saveddata.isNotEmpty) {
+      retrieveDataFromHive();
+    }
+  }
+
+  void saveDataToHive() {
+    final primarynumber = primary.text;
+    final leadname = name.text;
+    final secondarynumber = secondary.text;
+    final whatsappnumber = whatsapp.text;
+    final outsideno = outside.text;
+    final emailid = email.text;
+    final followdate = dateinput.text;
+    final followtime = timecontroller.text;
+    final expclosure = expdate.text;
+    final sources = source.text;
+    final assigneduser = assigned.text;
+    final tag = taguser.text;
+    final loc = location.text;
+    final refer = refered.text;
+
+    final enquiryModel = Enquiry(
+        primarynumber: primarynumber,
+        name: leadname,
+        secondarynumber: secondarynumber,
+        whatsappnumber: whatsappnumber,
+        outsidemob: outsideno,
+        followdate: followdate,
+        followtime: followtime,
+        expclosure: expclosure,
+        source: sources,
+        assigneduser: assigneduser,
+        taguser: tag,
+        location: loc,
+        referedby: refer,
+        email: emailid);
+    enquiryBox.add(enquiryModel);
+    setState(() {
+      saveddata.add(enquiryModel);
+      print(enquiryBox);
+    });
+
+    primary.clear();
+    name.clear();
+    secondary.clear();
+    whatsapp.clear();
+    outside.clear();
+    email.clear();
+    dateinput.clear();
+    timecontroller.clear();
+    expdate.clear();
+    source.clear();
+    assigned.clear();
+    taguser.clear();
+    location.clear();
+    refered.clear();
+
+    Navigator.of(context).pop();
+  }
+
+  void retrieveDataFromHive() {
+    for (var key in enquiryBox.keys) {
+      final enquirymodel = enquiryBox.get(key) as Enquiry;
+      print(enquirymodel);
+
+      // Set the retrieved data into the text fields
+      setState(() {
+        primary.text = enquirymodel.primarynumber;
+        name.text = enquirymodel.name;
+        secondary.text = enquirymodel.secondarynumber;
+        whatsapp.text = enquirymodel.whatsappnumber;
+        outside.text = enquirymodel.outsidemob;
+        email.text = enquirymodel.email;
+        dateinput.text = enquirymodel.followdate;
+        timecontroller.text = enquirymodel.followtime;
+        expdate.text = enquirymodel.expclosure;
+        source.text = enquirymodel.source;
+        assigned.text = enquirymodel.assigneduser;
+        taguser.text = enquirymodel.taguser;
+        location.text = enquirymodel.location;
+        refered.text = enquirymodel.referedby;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -54,7 +172,9 @@ class _NewenquiryState extends State<Newenquiry> {
             width: 10,
           ),
           TextButton(
-            onPressed: () {},
+            onPressed: () {
+              saveDataToHive();
+            },
             child: const Text(
               "SAVE",
               style: TextStyle(color: Colors.white, fontSize: 18),
@@ -72,6 +192,7 @@ class _NewenquiryState extends State<Newenquiry> {
                     child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
+                    controller: primary,
                     decoration:
                         const InputDecoration(labelText: "Primary Number"),
                   ),
@@ -80,6 +201,7 @@ class _NewenquiryState extends State<Newenquiry> {
                     child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
+                    controller: name,
                     decoration: const InputDecoration(
                       labelText: "Name",
                       suffixIcon: Icon(Icons.search),
@@ -95,6 +217,7 @@ class _NewenquiryState extends State<Newenquiry> {
                     child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
+                    controller: secondary,
                     decoration:
                         const InputDecoration(labelText: "Secondary Number"),
                   ),
@@ -103,6 +226,7 @@ class _NewenquiryState extends State<Newenquiry> {
                     child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
+                    controller: whatsapp,
                     decoration: const InputDecoration(
                       labelText: "Whatsapp Number",
                     ),
@@ -117,6 +241,7 @@ class _NewenquiryState extends State<Newenquiry> {
                     child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
+                    controller: outside,
                     decoration:
                         const InputDecoration(labelText: "Outside Country Mob"),
                   ),
@@ -125,6 +250,7 @@ class _NewenquiryState extends State<Newenquiry> {
                     child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
+                    controller: email,
                     decoration: const InputDecoration(
                       labelText: "Email",
                     ),
@@ -208,6 +334,7 @@ class _NewenquiryState extends State<Newenquiry> {
                     child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
+                    controller: source,
                     decoration: InputDecoration(
                       labelText: "Source",
                       hintText: "Source",
@@ -227,6 +354,7 @@ class _NewenquiryState extends State<Newenquiry> {
                     child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
+                    controller: assigned,
                     decoration: InputDecoration(
                       labelText: "Assigned user",
                       hintText: "Abhilash",
@@ -241,6 +369,7 @@ class _NewenquiryState extends State<Newenquiry> {
                     child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
+                    controller: taguser,
                     decoration: InputDecoration(
                       labelText: "Tag user",
                       hintText: "Select",
@@ -260,6 +389,7 @@ class _NewenquiryState extends State<Newenquiry> {
                     child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
+                    controller: location,
                     decoration: const InputDecoration(
                       labelText: "Location",
                       suffixIcon: Icon(Icons.location_on),
@@ -270,6 +400,7 @@ class _NewenquiryState extends State<Newenquiry> {
                     child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
+                    controller: refered,
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: Colors.grey[200],
