@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uisample/firebase_services/firebasenotification.dart';
 import 'package:uisample/main.dart';
 import 'package:uisample/pages/callLogspage.dart';
+import 'package:uisample/pages/enquirylist.dart';
 import 'package:uisample/pages/loginpage.dart';
 import 'package:uisample/pages/newEnquirypage.dart';
 import 'package:uisample/pages/notificationpage.dart';
@@ -218,7 +219,10 @@ class _MyhomepageState extends State<Myhomepage> {
               name: "Enquiries",
               color: Colors.green,
               icon: Icons.insert_chart_rounded,
-              ontap: () {},
+              ontap: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: ((context) => Enquirylistspage())));
+              },
             ),
             Homecard(
               name: "Add Client",

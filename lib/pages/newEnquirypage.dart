@@ -5,12 +5,14 @@ import 'package:intl/intl.dart';
 import 'package:uisample/model/enquiry.dart';
 import 'package:uisample/model/product.dart';
 import 'package:uisample/model/productmodel.dart';
+import 'package:uisample/model/selectedproduct.dart';
 
 import 'package:uisample/pages/productPage.dart';
 import 'package:uisample/productdetails.dart';
 
 class Newenquiry extends StatefulWidget {
-  const Newenquiry({super.key});
+  var enquiries;
+  Newenquiry({super.key, this.enquiries});
 
   @override
   State<Newenquiry> createState() => _NewenquiryState();
@@ -39,6 +41,8 @@ class _NewenquiryState extends State<Newenquiry> {
   double discountValue = 0.0;
   late Box<Enquiry> enquiryBox;
   List<Enquiry> saveddata = [];
+  late Box<Selectedproducts> selectedProductsBox;
+  List<Selectedproducts> productSelected = [];
 
   void getproduct() async {
     final products = await Navigator.of(context)
@@ -46,7 +50,9 @@ class _NewenquiryState extends State<Newenquiry> {
 
     if (products != null) {
       setState(() {
-        productlist = products;
+        // productlist = products;
+
+        print(productlist);
         for (var selectedProduct in products) {
           ProductDetails productDetails = ProductDetails(
               name: selectedProduct.title!,
@@ -57,6 +63,7 @@ class _NewenquiryState extends State<Newenquiry> {
               taxamound: '0',
               salesvalue: '0');
           productdetails.add(productDetails);
+          saveSelectedProductsToHive(productDetails);
         }
       });
     }
@@ -66,22 +73,92 @@ class _NewenquiryState extends State<Newenquiry> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    // if (widget.enquiries != null) {
+    //   print("enqury" + widget.enquiries.toString());
+    //   setState(() {
+    //     print("Enquiry" + widget.enquiries.toString());
+    //     saveddata = widget.enquiries!;
+    //   });
+    // }
     _initializeHive();
   }
 
   Future<void> _initializeHive() async {
     await Hive.initFlutter();
     await Hive.openBox<Enquiry>('enquiryBox');
+    await Hive.openBox<Selectedproducts>('selectedProducts');
     enquiryBox = Hive.box<Enquiry>('enquiryBox');
     saveddata = enquiryBox.values.toList();
+    selectedProductsBox = Hive.box<Selectedproducts>('selectedProducts');
+    print("Enquiry Box Length : " + enquiryBox.length.toString());
+    print("selelected Box Length : " + selectedProductsBox.length.toString());
 
     setState(() {});
     if (saveddata.isNotEmpty) {
       retrieveDataFromHive();
+      retrieveSelectedProductsFromHive();
     }
+    // if (productSelected.isNotEmpty) {
+    //   productdetails = productSelected;
+    // }
   }
 
-  void saveDataToHive() {
+  void saveSelectedProductsToHive(products) async {
+    final selectModel = Selectedproducts(
+      title: products.name ?? "",
+      price: int.parse(products.price),
+      total: products.total ?? "",
+      tax: products.tax ?? "",
+      taxamound: products.taxamound ?? "",
+      salesvalue: products.salesvalue ?? "",
+      qty: products.qty ?? "",
+      enquiryId: enquiryBox.keys.toString(),
+    );
+    await selectedProductsBox.add(selectModel);
+    setState(() {
+      productSelected.add(selectModel);
+      print('selected' + productSelected.toString());
+    });
+  }
+
+  void retrieveSelectedProductsFromHive() {
+    List<ProductDetails> selectedProductsForEnquiry = [];
+
+    print("HI" + selectedProductsBox.keys.toString());
+    print("length" + selectedProductsBox.length.toString());
+    // print("Key" + selectedProductsBox.(1).toString());
+
+    for (var key in selectedProductsBox.keys) {
+      print(key.toString());
+      print("Key" + selectedProductsBox.get(key + 1).toString());
+
+      print("Key2" + selectedProductsBox.get(key).runtimeType.toString());
+      final selectmodel = selectedProductsBox.get(key) as Selectedproducts;
+      print(selectmodel);
+      // Check if the retrieved object is of the correct type
+
+      // Only include products related to the specific enquiry
+      // if (selectmodel.id == enquiryBox.get(key)!.id) {
+      selectedProductsForEnquiry.add(ProductDetails(
+        name: selectmodel.title,
+        qty: selectmodel.qty,
+        price: selectmodel.price.toString(),
+        total: selectmodel.total,
+        tax: selectmodel.tax,
+        taxamound: selectmodel.taxamound,
+        salesvalue: selectmodel.salesvalue,
+      ));
+      print(selectedProductsForEnquiry.toList());
+    }
+    // }
+
+    setState(() {
+      productdetails = selectedProductsForEnquiry;
+      print(productdetails);
+    });
+  }
+
+  void saveDataToHive() async {
     final primarynumber = primary.text;
     final leadname = name.text;
     final secondarynumber = secondary.text;
@@ -112,10 +189,12 @@ class _NewenquiryState extends State<Newenquiry> {
         location: loc,
         referedby: refer,
         email: emailid);
-    enquiryBox.add(enquiryModel);
+    await enquiryBox.add(enquiryModel);
+    print("enquiryBox" + enquiryBox.toString());
+    print("selected:" + productSelected.toString());
     setState(() {
       saveddata.add(enquiryModel);
-      print(enquiryBox);
+      print(saveddata.length);
     });
 
     primary.clear();
@@ -431,15 +510,15 @@ class _NewenquiryState extends State<Newenquiry> {
             ),
             SizedBox(
               height: 150,
-              child: productlist.isEmpty
+              child: productdetails.isEmpty
                   ? Container()
                   : SingleChildScrollView(
                       child: Column(
-                        children: productlist.asMap().entries.map((entry) {
+                        children: productdetails.asMap().entries.map((entry) {
                           final index = entry.key;
                           final selectedproduct = entry.value;
                           return Dismissible(
-                            key: Key("${selectedproduct.id}"),
+                            key: Key("${selectedproduct.name}"),
                             background: Container(
                               color: Colors.red,
                               child: Center(
@@ -449,8 +528,6 @@ class _NewenquiryState extends State<Newenquiry> {
                             direction: DismissDirection.endToStart,
                             onDismissed: (direction) {
                               setState(() {
-                                productlist.removeAt(index);
-
                                 if (index >= 0 &&
                                     index < productdetails.length) {
                                   productdetails.removeAt(index);
@@ -461,13 +538,13 @@ class _NewenquiryState extends State<Newenquiry> {
                               });
                             },
                             child: ListTile(
-                              title: Text(selectedproduct.title),
+                              title: Text(selectedproduct.name),
                               subtitle: Text("Price:${selectedproduct.price}"),
                               onTap: () {
                                 showDialog(
                                   context: context,
                                   builder: (BuildContext context) =>
-                                      openPopUp(context, selectedproduct, null),
+                                      openPopUp(context, selectedproduct),
                                 );
                               },
                               trailing: Container(
@@ -502,9 +579,7 @@ class _NewenquiryState extends State<Newenquiry> {
                                         showDialog(
                                           context: context,
                                           builder: (BuildContext context) =>
-                                              openPopUp(
-                                                  context,
-                                                  productlist[index],
+                                              openPopUp(context,
                                                   productdetails[index]),
                                         );
                                       },
@@ -523,7 +598,7 @@ class _NewenquiryState extends State<Newenquiry> {
               height: 90,
               child: Column(
                 children: [
-                  productlist.isNotEmpty
+                  productdetails.isNotEmpty
                       ? Row(
                           children: [
                             SizedBox(
@@ -583,7 +658,7 @@ class _NewenquiryState extends State<Newenquiry> {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       Text(
-                        productlist.isNotEmpty
+                        productdetails.isNotEmpty
                             ? 'Grand Total(${productdetails.length} items):${calculateDiscount()} '
                             : "",
                         style: TextStyle(
@@ -608,11 +683,11 @@ class _NewenquiryState extends State<Newenquiry> {
     );
   }
 
-  openPopUp(BuildContext context, product, details) {
+  openPopUp(BuildContext context, details) {
     TextEditingController productcntrl =
-        TextEditingController(text: product.title);
+        TextEditingController(text: details.name);
     TextEditingController pricecontroller =
-        TextEditingController(text: "${product.price}");
+        TextEditingController(text: "${details.price}");
     TextEditingController taxcontroller = TextEditingController();
 
     TextEditingController qtycontroller = TextEditingController();
@@ -654,7 +729,7 @@ class _NewenquiryState extends State<Newenquiry> {
                       onChanged: (value) {
                         setState(() {
                           totalcontroller.text =
-                              "${int.parse(qtycontroller.text) * product.price}";
+                              "${int.parse(qtycontroller.text) * details.price}";
                         });
                       },
                     ),
@@ -704,7 +779,7 @@ class _NewenquiryState extends State<Newenquiry> {
                               setState(() {
                                 taxcontroller.text = newValue!;
                                 taxamound.text =
-                                    "${product.price * int.parse(taxcontroller.text) / 100}";
+                                    "${details.price * int.parse(taxcontroller.text) / 100}";
                                 salesvalue.text =
                                     "${int.parse(qtycontroller.text) * double.parse(taxamound.text) + int.parse(totalcontroller.text)}";
                               });
@@ -765,8 +840,7 @@ class _NewenquiryState extends State<Newenquiry> {
                     String sales = salesvalue.text;
 
                     setState(() {
-                      if (productdetails.isEmpty ||
-                          productdetails.length < productlist.length) {
+                      if (productdetails.isEmpty) {
                         // Adding a new product
                         ProductDetails newProduct = ProductDetails(
                           name: name,

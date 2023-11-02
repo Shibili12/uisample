@@ -28,6 +28,7 @@ void main() async {
 
   Hive.registerAdapter(ProductDbAdapter());
   Hive.registerAdapter(EnquiryAdapter());
+  Hive.registerAdapter(SelectedproductsAdapter());
   await Hive.openBox<ProductDb>('products');
   await Hive.openBox<Enquiry>('enquiryBox');
   await Hive.openBox<Selectedproducts>('selectedProducts');
