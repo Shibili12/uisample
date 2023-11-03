@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:uisample/model/enquiry.dart';
+import 'package:uisample/model/selectedproduct.dart';
 import 'package:uisample/pages/newEnquirypage.dart';
 
 class Enquirylistspage extends StatefulWidget {
@@ -12,9 +13,11 @@ class Enquirylistspage extends StatefulWidget {
 
 class _EnquirylistspageState extends State<Enquirylistspage> {
   List<Enquiry> enquiries = [];
+  List<Selectedproducts> products = [];
 
   void retrieveEnquiries() async {
     Box<Enquiry> enquiryBox = await Hive.openBox('enquiryBox');
+
     // Retrieve the list of enquiries from the enquiryBox
     List<Enquiry> retrievedEnquiries = enquiryBox.values.toList();
 
@@ -28,6 +31,7 @@ class _EnquirylistspageState extends State<Enquirylistspage> {
     // TODO: implement initState
     super.initState();
     retrieveEnquiries();
+    // enquiries.clear();
   }
 
   @override
@@ -48,7 +52,7 @@ class _EnquirylistspageState extends State<Enquirylistspage> {
               onPressed: () {
                 Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => Newenquiry(
-                          enquiries: enquiries[index],
+                          enquiries: [enquiries[index]],
                         )));
               },
               child: Text("EDIT"),

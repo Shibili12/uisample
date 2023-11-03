@@ -11,7 +11,7 @@ import 'package:uisample/pages/productPage.dart';
 import 'package:uisample/productdetails.dart';
 
 class Newenquiry extends StatefulWidget {
-  var enquiries;
+  List<Enquiry>? enquiries;
   Newenquiry({super.key, this.enquiries});
 
   @override
@@ -44,14 +44,14 @@ class _NewenquiryState extends State<Newenquiry> {
   late Box<Selectedproducts> selectedProductsBox;
   List<Selectedproducts> productSelected = [];
 
-  void getproduct() async {
+  Future<void> getproduct() async {
     final products = await Navigator.of(context)
         .push(MaterialPageRoute(builder: ((context) => Productpage())));
 
     if (products != null) {
       setState(() {
         // productlist = products;
-
+        final enquiryList = enquiryBox.values.toList();
         print(productlist);
         for (var selectedProduct in products) {
           ProductDetails productDetails = ProductDetails(
@@ -63,7 +63,9 @@ class _NewenquiryState extends State<Newenquiry> {
               taxamound: '0',
               salesvalue: '0');
           productdetails.add(productDetails);
-          saveSelectedProductsToHive(productDetails);
+          if (saveddata.isNotEmpty) {
+            saveSelectedProductsToHive(productDetails);
+          }
         }
       });
     }
@@ -92,18 +94,24 @@ class _NewenquiryState extends State<Newenquiry> {
     selectedProductsBox = Hive.box<Selectedproducts>('selectedProducts');
     print("Enquiry Box Length : " + enquiryBox.length.toString());
     print("selelected Box Length : " + selectedProductsBox.length.toString());
-
+    // enquiryBox.clear();
+    // selectedProductsBox.clear();
     setState(() {});
-    if (saveddata.isNotEmpty) {
+    if (widget.enquiries != null) {
       retrieveDataFromHive();
-      retrieveSelectedProductsFromHive();
+      await retrieveSelectedProductsFromHive();
     }
     // if (productSelected.isNotEmpty) {
     //   productdetails = productSelected;
     // }
   }
 
-  void saveSelectedProductsToHive(products) async {
+  Future<void> saveSelectedProductsToHive(products) async {
+    var enqid;
+    for (var element in saveddata) {
+      enqid = element.id ?? "";
+    }
+
     final selectModel = Selectedproducts(
       title: products.name ?? "",
       price: int.parse(products.price),
@@ -112,7 +120,7 @@ class _NewenquiryState extends State<Newenquiry> {
       taxamound: products.taxamound ?? "",
       salesvalue: products.salesvalue ?? "",
       qty: products.qty ?? "",
-      enquiryId: enquiryBox.keys.toString(),
+      enquiryId: enqid,
     );
     await selectedProductsBox.add(selectModel);
     setState(() {
@@ -121,36 +129,33 @@ class _NewenquiryState extends State<Newenquiry> {
     });
   }
 
-  void retrieveSelectedProductsFromHive() {
+  Future<void> retrieveSelectedProductsFromHive() async {
     List<ProductDetails> selectedProductsForEnquiry = [];
-
-    print("HI" + selectedProductsBox.keys.toString());
-    print("length" + selectedProductsBox.length.toString());
-    // print("Key" + selectedProductsBox.(1).toString());
+    var enqid;
+    for (var en in widget.enquiries!) {
+      print(en.id);
+      enqid = en.id;
+    }
 
     for (var key in selectedProductsBox.keys) {
-      print(key.toString());
-      print("Key" + selectedProductsBox.get(key + 1).toString());
-
-      print("Key2" + selectedProductsBox.get(key).runtimeType.toString());
       final selectmodel = selectedProductsBox.get(key) as Selectedproducts;
-      print(selectmodel);
-      // Check if the retrieved object is of the correct type
-
-      // Only include products related to the specific enquiry
-      // if (selectmodel.id == enquiryBox.get(key)!.id) {
-      selectedProductsForEnquiry.add(ProductDetails(
-        name: selectmodel.title,
-        qty: selectmodel.qty,
-        price: selectmodel.price.toString(),
-        total: selectmodel.total,
-        tax: selectmodel.tax,
-        taxamound: selectmodel.taxamound,
-        salesvalue: selectmodel.salesvalue,
-      ));
-      print(selectedProductsForEnquiry.toList());
+      print(selectmodel.enquiryId);
+      if (enqid == selectmodel.enquiryId || enqid == null) {
+        selectedProductsForEnquiry.add(ProductDetails(
+          name: selectmodel.title,
+          qty: selectmodel.qty,
+          price: selectmodel.price.toString(),
+          total: selectmodel.total,
+          tax: selectmodel.tax,
+          taxamound: selectmodel.taxamound,
+          salesvalue: selectmodel.salesvalue,
+        ));
+        print(selectedProductsForEnquiry.toList());
+        // }
+      } else {
+        print("MISMATCH");
+      }
     }
-    // }
 
     setState(() {
       productdetails = selectedProductsForEnquiry;
@@ -211,31 +216,26 @@ class _NewenquiryState extends State<Newenquiry> {
     taguser.clear();
     location.clear();
     refered.clear();
-
-    Navigator.of(context).pop();
   }
 
   void retrieveDataFromHive() {
-    for (var key in enquiryBox.keys) {
-      final enquirymodel = enquiryBox.get(key) as Enquiry;
-      print(enquirymodel);
-
+    for (var element in widget.enquiries!) {
       // Set the retrieved data into the text fields
       setState(() {
-        primary.text = enquirymodel.primarynumber;
-        name.text = enquirymodel.name;
-        secondary.text = enquirymodel.secondarynumber;
-        whatsapp.text = enquirymodel.whatsappnumber;
-        outside.text = enquirymodel.outsidemob;
-        email.text = enquirymodel.email;
-        dateinput.text = enquirymodel.followdate;
-        timecontroller.text = enquirymodel.followtime;
-        expdate.text = enquirymodel.expclosure;
-        source.text = enquirymodel.source;
-        assigned.text = enquirymodel.assigneduser;
-        taguser.text = enquirymodel.taguser;
-        location.text = enquirymodel.location;
-        refered.text = enquirymodel.referedby;
+        primary.text = element.primarynumber;
+        name.text = element.name;
+        secondary.text = element.secondarynumber;
+        whatsapp.text = element.whatsappnumber;
+        outside.text = element.outsidemob;
+        email.text = element.email;
+        dateinput.text = element.followdate;
+        timecontroller.text = element.followtime;
+        expdate.text = element.expclosure;
+        source.text = element.source;
+        assigned.text = element.assigneduser;
+        taguser.text = element.taguser;
+        location.text = element.location;
+        refered.text = element.referedby;
       });
     }
   }
@@ -252,7 +252,7 @@ class _NewenquiryState extends State<Newenquiry> {
           ),
           TextButton(
             onPressed: () {
-              saveDataToHive();
+              Navigator.of(context).pop();
             },
             child: const Text(
               "SAVE",
@@ -501,8 +501,9 @@ class _NewenquiryState extends State<Newenquiry> {
                     decoration: const InputDecoration(
                       labelText: "Products",
                     ),
-                    onTap: () {
-                      getproduct();
+                    onTap: () async {
+                      saveDataToHive();
+                      await getproduct();
                     },
                   ),
                 )),

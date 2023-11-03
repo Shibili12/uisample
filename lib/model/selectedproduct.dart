@@ -32,6 +32,6 @@ class Selectedproducts {
     required this.qty,
     required this.enquiryId,
   }) {
-    id = DateTime.now().microsecondsSinceEpoch.toString();
+    id = DateTime.now().minute.toString();
   }
 }

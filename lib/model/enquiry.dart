@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:uuid/uuid.dart';
 
 part 'enquiry.g.dart';
 
@@ -51,6 +52,6 @@ class Enquiry {
     required this.referedby,
     required this.email,
   }) {
-    id = DateTime.now().microsecondsSinceEpoch.toString();
+    id = Uuid().v4();
   }
 }
