@@ -43,9 +43,15 @@ class _AddClientPageState extends State<AddClientPage> {
         actions: [
           TextButton(
             onPressed: () {
-              widget.clients == null
-                  ? saveClienttoHive()
-                  : updateClientfromHive();
+              if (widget.clients != null) {
+                for (var element in widget.clients!) {
+                  updateClientfromHive(element);
+                }
+                Navigator.of(context).pop(true);
+              } else {
+                saveClienttoHive();
+                Navigator.of(context).pop();
+              }
             },
             child: Text(
               widget.clients == null ? "ADD" : "UPDATE",
@@ -136,5 +142,18 @@ class _AddClientPageState extends State<AddClientPage> {
     }
   }
 
-  updateClientfromHive() {}
+  updateClientfromHive(ClientDb client) async {
+    final index = savedClients.indexWhere((element) => element.id == client.id);
+    if (index != -1) {
+      final updatedClient = ClientDb(
+          name: namecontroller.text,
+          phonenumber: phonecontroller.text,
+          place: placecontroller.text,
+          email: emailcontroller.text,
+          secondarynumber: secondary.text);
+      savedClients[index] = updatedClient;
+      await clientBox.put(index, updatedClient);
+      setState(() {});
+    }
+  }
 }

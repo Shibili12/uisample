@@ -49,11 +49,15 @@ class _ClientslistpageState extends State<Clientslistpage> {
                     color: Colors.red,
                   )),
               IconButton(
-                  onPressed: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) => AddClientPage(
-                              clients: [clients[index]],
-                            )));
+                  onPressed: () async {
+                    final output =
+                        await Navigator.of(context).push(MaterialPageRoute(
+                            builder: (context) => AddClientPage(
+                                  clients: [clients[index]],
+                                )));
+                    if (output) {
+                      retrieveclients();
+                    }
                   },
                   icon: Icon(
                     Icons.edit,

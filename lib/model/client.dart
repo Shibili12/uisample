@@ -14,11 +14,15 @@ class ClientDb {
   final String place;
   @HiveField(4)
   final String secondarynumber;
+  @HiveField(5)
+  String? id;
   ClientDb({
     required this.name,
     required this.phonenumber,
     required this.place,
     required this.email,
     required this.secondarynumber,
-  });
+  }) {
+    id = DateTime.now().microsecondsSinceEpoch.toString();
+  }
 }
