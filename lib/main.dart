@@ -6,6 +6,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uisample/firebase_options.dart';
 import 'package:uisample/firebase_services/firebasenotification.dart';
+import 'package:uisample/model/client.dart';
 import 'package:uisample/model/enquiry.dart';
 import 'package:uisample/model/product.dart';
 import 'package:uisample/model/selectedproduct.dart';
@@ -29,9 +30,11 @@ void main() async {
   Hive.registerAdapter(ProductDbAdapter());
   Hive.registerAdapter(EnquiryAdapter());
   Hive.registerAdapter(SelectedproductsAdapter());
+  Hive.registerAdapter(ClientDbAdapter());
   await Hive.openBox<ProductDb>('products');
   await Hive.openBox<Enquiry>('enquiryBox');
   await Hive.openBox<Selectedproducts>('selectedProducts');
+  await Hive.openBox<ClientDb>('client');
   runApp(const MyApp());
 }
 

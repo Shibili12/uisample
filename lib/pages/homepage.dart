@@ -6,7 +6,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uisample/firebase_services/firebasenotification.dart';
 import 'package:uisample/main.dart';
+import 'package:uisample/pages/addclientpage.dart';
 import 'package:uisample/pages/callLogspage.dart';
+import 'package:uisample/pages/clientslistpage.dart';
 import 'package:uisample/pages/enquirylist.dart';
 import 'package:uisample/pages/loginpage.dart';
 import 'package:uisample/pages/newEnquirypage.dart';
@@ -228,13 +230,19 @@ class _MyhomepageState extends State<Myhomepage> {
               name: "Add Client",
               color: Colors.yellow,
               icon: Icons.person_pin_rounded,
-              ontap: () {},
+              ontap: () {
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => AddClientPage()));
+              },
             ),
             Homecard(
               name: "Clients",
               color: Colors.red,
               icon: Icons.card_travel_rounded,
-              ontap: () {},
+              ontap: () {
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => Clientslistpage()));
+              },
             ),
             Homecard(
               name: "orders",
