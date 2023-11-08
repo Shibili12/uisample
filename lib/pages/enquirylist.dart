@@ -5,7 +5,8 @@ import 'package:uisample/model/selectedproduct.dart';
 import 'package:uisample/pages/newEnquirypage.dart';
 
 class Enquirylistspage extends StatefulWidget {
-  const Enquirylistspage({super.key});
+  var updatedEnquiry;
+  Enquirylistspage({super.key, this.updatedEnquiry});
 
   @override
   State<Enquirylistspage> createState() => _EnquirylistspageState();
@@ -49,11 +50,15 @@ class _EnquirylistspageState extends State<Enquirylistspage> {
             title: Text(enquiries[index].name),
             subtitle: Text(enquiries[index].primarynumber),
             trailing: TextButton(
-              onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => Newenquiry(
-                          enquiries: [enquiries[index]],
-                        )));
+              onPressed: () async {
+                final output =
+                    await Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => Newenquiry(
+                              enquiries: [enquiries[index]],
+                            )));
+                if (output) {
+                  retrieveEnquiries();
+                }
               },
               child: Text("EDIT"),
             ),

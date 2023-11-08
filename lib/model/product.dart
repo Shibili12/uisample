@@ -10,10 +10,13 @@ class ProductDb {
   final String title;
   @HiveField(2)
   final int price;
+  @HiveField(3)
+  final bool isSelected;
 
   ProductDb({
     required this.id,
     required this.title,
     required this.price,
+    this.isSelected = false,
   });
 }

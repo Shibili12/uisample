@@ -20,19 +20,22 @@ class ProductDbAdapter extends TypeAdapter<ProductDb> {
       id: fields[0] as int,
       title: fields[1] as String,
       price: fields[2] as int,
+      isSelected: fields[3] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, ProductDb obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(4)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
       ..write(obj.title)
       ..writeByte(2)
-      ..write(obj.price);
+      ..write(obj.price)
+      ..writeByte(3)
+      ..write(obj.isSelected);
   }
 
   @override

@@ -52,6 +52,6 @@ class Enquiry {
     required this.referedby,
     required this.email,
   }) {
-    id = Uuid().v4();
+    id = const Uuid().v4();
   }
 }

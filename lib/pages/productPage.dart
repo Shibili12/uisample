@@ -15,21 +15,22 @@ class Productpage extends StatefulWidget {
 }
 
 class _ProductpageState extends State<Productpage> {
-  List<Product> productlist = [];
+  late List<Product> productlist = [];
   TextEditingController serchcontroller = TextEditingController();
   // List<Product> selectedProducts = [];
-  Set<Product> selectedProducts = {};
+  List<Product> selectedProducts = [];
   late Box<ProductDb> productBox;
 
   Future fetchAndCacheData() async {
     if (productBox.isNotEmpty) {
-      // If there is cached data, use it.
+      print("Hi");
       setState(() {
         productlist = productBox.values.map((productDb) {
           return Product(
             id: productDb.id,
             title: productDb.title,
             price: productDb.price,
+            isSelected: productDb.isSelected,
           );
         }).toList();
       });
@@ -49,6 +50,7 @@ class _ProductpageState extends State<Productpage> {
               id: product.id!,
               title: product.title!,
               price: product.price!,
+              isSelected: product.isSelected,
             );
           }));
         });
@@ -64,7 +66,10 @@ class _ProductpageState extends State<Productpage> {
     Hive.openBox<ProductDb>('productBox').then((box) {
       productBox = box;
       // Fetch and update products here.
+      // productBox.clear();
+
       fetchAndCacheData();
+      // print("Productbox length:" + productBox.values.length.toString());
     });
   }
 
@@ -94,13 +99,15 @@ class _ProductpageState extends State<Productpage> {
             Expanded(
               flex: 8,
               child: FutureBuilder(
-                  future: fetchAndCacheData(),
+                  future: Future(() => productlist),
                   builder: (context, snapshot) {
                     if (!snapshot.hasData) {
                       return Center(
                         child: CircularProgressIndicator(),
                       );
                     } else {
+                      // print(
+                      //     "Productbox :" + productBox.values.length.toString());
                       return ListView.builder(
                         itemCount: productlist.length,
                         itemBuilder: (context, index) => Card(
@@ -112,20 +119,15 @@ class _ProductpageState extends State<Productpage> {
                               value: selectedProducts
                                   .contains(snapshot.data![index]),
                               onChanged: (bool? value) {
+                                final product = snapshot.data![index];
                                 setState(() {
-                                  final product = snapshot.data![index];
-                                  print(
-                                      "Checkbox changed for: ${snapshot.data![index].title}");
-                                  if (value == true &&
-                                      !selectedProducts.contains(product)) {
+                                  if (value == true) {
                                     selectedProducts.add(product);
                                     product.isSelected = true;
                                   } else {
                                     selectedProducts.remove(product);
                                     product.isSelected = false;
                                   }
-
-                                  // getSelectedProducts();
                                 });
                               },
                             ),
@@ -173,21 +175,4 @@ class _ProductpageState extends State<Productpage> {
       productlist = suggestions;
     });
   }
-
-  // void getSelectedProducts() {
-  //   selectedProducts.clear();
-  //   for (var product in productlist) {
-  //     // if (selectedProducts.contains(product)) {
-  //     //   selectedProducts.clear();
-  //     // }
-  //     if (product.isSelected) {
-  //       selectedProducts.add(product);
-  //     }
-  //   }
-
-  //   print("Selected products count: ${selectedProducts.length}");
-  //   for (var product in selectedProducts) {
-  //     print("Selected product: ${product.title}");
-  //   }
-  // }
 }

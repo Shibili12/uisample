@@ -51,7 +51,7 @@ class _NewenquiryState extends State<Newenquiry> {
     if (products != null) {
       setState(() {
         // productlist = products;
-        final enquiryList = enquiryBox.values.toList();
+        // final enquiryList = enquiryBox.values.toList();
         print(productlist);
         for (var selectedProduct in products) {
           ProductDetails productDetails = ProductDetails(
@@ -63,9 +63,26 @@ class _NewenquiryState extends State<Newenquiry> {
               taxamound: '0',
               salesvalue: '0');
           productdetails.add(productDetails);
-          if (saveddata.isNotEmpty) {
+          if (widget.enquiries == null) {
             saveSelectedProductsToHive(productDetails);
+          } else {
+            for (var key in enquiryBox.keys) {
+              var value = enquiryBox.get(key);
+              print("hello welcome");
+              print("result :" + widget.enquiries!.contains(value).toString());
+              print("Key " + key.toString());
+              print("value " + value!.name.toString());
+
+              if (widget.enquiries!.contains(value)) {
+                var enqid = key.toString();
+                print("hello hi");
+                print("Key: $enqid");
+                updateSelectedProductInHive(enqid, productDetails);
+              }
+            }
           }
+          //   }
+          // }
         }
       });
     }
@@ -108,8 +125,9 @@ class _NewenquiryState extends State<Newenquiry> {
 
   Future<void> saveSelectedProductsToHive(products) async {
     var enqid;
-    for (var element in saveddata) {
-      enqid = element.id ?? "";
+
+    for (var key in enquiryBox.keys) {
+      enqid = key.toString();
     }
 
     final selectModel = Selectedproducts(
@@ -131,16 +149,22 @@ class _NewenquiryState extends State<Newenquiry> {
 
   Future<void> retrieveSelectedProductsFromHive() async {
     List<ProductDetails> selectedProductsForEnquiry = [];
+
     var enqid;
-    for (var en in widget.enquiries!) {
-      print(en.id);
-      enqid = en.id;
+    for (var key in enquiryBox.keys) {
+      var value = enquiryBox.get(key);
+      if (widget.enquiries!.contains(value)) {
+        enqid = key;
+        print("Key: ${enqid}, Value: ${value}");
+      }
     }
 
     for (var key in selectedProductsBox.keys) {
       final selectmodel = selectedProductsBox.get(key) as Selectedproducts;
       print(selectmodel.enquiryId);
-      if (enqid == selectmodel.enquiryId || enqid == null) {
+      print(enqid);
+      if (enqid.toString() == selectmodel.enquiryId) {
+        print("hi");
         selectedProductsForEnquiry.add(ProductDetails(
           name: selectmodel.title,
           qty: selectmodel.qty,
@@ -240,6 +264,71 @@ class _NewenquiryState extends State<Newenquiry> {
     }
   }
 
+  void updateEnquiry(Enquiry updatedEnquiry) async {
+    final index =
+        saveddata.indexWhere((element) => element.id == updatedEnquiry.id);
+    print("index:$index");
+
+    if (index != -1) {
+      // saveddata.removeAt(index);
+      // await enquiryBox.delete(updatedEnquiry.id);
+      final updatedmodel = Enquiry(
+          primarynumber: primary.text,
+          name: name.text,
+          secondarynumber: secondary.text,
+          whatsappnumber: whatsapp.text,
+          outsidemob: outside.text,
+          followdate: dateinput.text,
+          followtime: timecontroller.text,
+          expclosure: expdate.text,
+          source: source.text,
+          assigneduser: assigned.text,
+          taguser: taguser.text,
+          location: location.text,
+          referedby: refered.text,
+          email: email.text);
+      saveddata[index] = updatedmodel;
+
+      await enquiryBox.put(index, updatedmodel);
+
+      setState(() {});
+    }
+  }
+
+  Future<void> updateSelectedProductInHive(
+      String enquiryId, updatedProduct) async {
+    final enqid = enquiryId;
+    print(" id enq:$enqid");
+    final selectedProductsForEnquiry = <Selectedproducts>[];
+    final existingProducts = selectedProductsBox.values.toList();
+    for (var product in existingProducts) {
+      if (product.enquiryId == enqid) {
+        selectedProductsForEnquiry.add(product);
+      }
+    }
+    // for (var product in updatedProduct) {
+    final model = Selectedproducts(
+      title: updatedProduct.name ?? "",
+      price: int.parse(updatedProduct.price),
+      total: updatedProduct.total ?? "",
+      tax: updatedProduct.tax ?? "",
+      taxamound: updatedProduct.taxamound ?? "",
+      salesvalue: updatedProduct.salesvalue ?? "",
+      qty: updatedProduct.qty ?? "",
+      enquiryId: enqid.toString(),
+    );
+    await selectedProductsBox.add(model);
+    selectedProductsForEnquiry.add(model);
+    print("updatedProduct ${updatedProduct.name}");
+    print("selected products:$selectedProductsForEnquiry");
+    print(" id ${model.enquiryId}");
+    print(" title ${model.title}");
+    // }
+    setState(() {
+      productSelected = selectedProductsForEnquiry;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -252,10 +341,18 @@ class _NewenquiryState extends State<Newenquiry> {
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              if (widget.enquiries != null) {
+                for (var element in widget.enquiries!) {
+                  print(element.name);
+                  updateEnquiry(element);
+                  Navigator.of(context).pop(true);
+                }
+              } else {
+                Navigator.of(context).pop();
+              }
             },
-            child: const Text(
-              "SAVE",
+            child: Text(
+              widget.enquiries == null ? "SAVE" : "Update",
               style: TextStyle(color: Colors.white, fontSize: 18),
             ),
           ),
@@ -502,8 +599,12 @@ class _NewenquiryState extends State<Newenquiry> {
                       labelText: "Products",
                     ),
                     onTap: () async {
-                      saveDataToHive();
-                      await getproduct();
+                      if (widget.enquiries == null) {
+                        saveDataToHive();
+                        await getproduct();
+                      } else {
+                        await getproduct();
+                      }
                     },
                   ),
                 )),
@@ -532,6 +633,8 @@ class _NewenquiryState extends State<Newenquiry> {
                                 if (index >= 0 &&
                                     index < productdetails.length) {
                                   productdetails.removeAt(index);
+                                  selectedProductsBox.deleteAt(index);
+                                  // productSelected.removeAt(index);
                                 } else {
                                   // Handle the case where index is out of bounds (invalid)
                                   print('Invalid index: $index');
@@ -965,4 +1068,46 @@ class _NewenquiryState extends State<Newenquiry> {
     }
     return discountedPrice;
   }
+
+//   Future<void> updateSelectedProducts(int enqid) async {
+//   // Step 1: Retrieve selected products
+//   List<ProductDetails> selectedProductsForEnquiry = await retrieveSelectedProductsFromHive(enqid);
+
+//   // Step 2: Update the selected products
+//   for (var product in selectedProductsForEnquiry) {
+//     // Example: Update the quantity of each product
+//     product.qty = "Updated Quantity";
+//     // Add more update logic as needed
+//   }
+
+//   // Step 3: Save the updated selected products back to Hive
+//   await saveUpdatedSelectedProducts(selectedProductsForEnquiry);
+// }
+
+// Future<void> saveUpdatedSelectedProducts(List<ProductDetails> updatedProducts) async {
+//   for (var product in updatedProducts) {
+//     // Create a Selectedproducts object from updated ProductDetails
+//     final updatedProduct = Selectedproducts(
+//       title: product.name,
+//       price:int.parse( product.price),
+//       total: product.total,
+//       tax: product.tax,
+//       taxamound: product.taxamound,
+//       salesvalue: product.salesvalue,
+//       qty: product.qty,
+//       // Set the appropriate enquiryId
+//       enquiryId:, // Replace 'enqid' with the correct value
+//     );
+
+//     // Find the existing selected product in Hive and update it
+//     for (var key in selectedProductsBox.keys) {
+//       final selectmodel = selectedProductsBox.get(key) as Selectedproducts;
+//       if (selectmodel.title == updatedProduct.title) {
+//         updatedProduct.id = selectmodel.id;
+//         await selectedProductsBox.put(key, updatedProduct);
+//         break; // Found and updated the product, exit the loop
+//       }
+//     }
+//   }
+// }
 }
