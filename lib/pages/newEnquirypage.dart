@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:uisample/model/client.dart';
 import 'package:uisample/model/enquiry.dart';
 import 'package:uisample/model/product.dart';
 import 'package:uisample/model/productmodel.dart';
@@ -43,6 +44,9 @@ class _NewenquiryState extends State<Newenquiry> {
   List<Enquiry> saveddata = [];
   late Box<Selectedproducts> selectedProductsBox;
   List<Selectedproducts> productSelected = [];
+
+  List<ClientDb> clients = [];
+  String? dropdownClient;
 
   Future<void> getproduct() async {
     final products = await Navigator.of(context)
@@ -92,14 +96,16 @@ class _NewenquiryState extends State<Newenquiry> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    // if (widget.enquiries != null) {
-    //   print("enqury" + widget.enquiries.toString());
-    //   setState(() {
-    //     print("Enquiry" + widget.enquiries.toString());
-    //     saveddata = widget.enquiries!;
-    //   });
-    // }
     _initializeHive();
+    loadClientfromhive();
+  }
+
+  Future<void> loadClientfromhive() async {
+    var clientbox = await Hive.openBox<ClientDb>('client');
+    setState(() {
+      clients = clientbox.values.toList();
+      dropdownClient = clients.isNotEmpty ? clients[0].name : null;
+    });
   }
 
   Future<void> _initializeHive() async {
@@ -533,11 +539,33 @@ class _NewenquiryState extends State<Newenquiry> {
                     controller: assigned,
                     decoration: InputDecoration(
                       labelText: "Assigned user",
-                      hintText: "Abhilash",
-                      suffixIcon: IconButton(
-                        onPressed: () {},
+                      hintText: dropdownClient,
+                      suffixIcon:
+                          // IconButton(
+                          //   onPressed: () {
+                          DropdownButton<String>(
+                        // value: dropdownClient,
                         icon: Icon(Icons.keyboard_arrow_down),
+                        iconSize: 30,
+                        elevation: 0,
+                        underline: SizedBox(),
+                        items: clients
+                            .map<DropdownMenuItem<String>>((ClientDb client) {
+                          return DropdownMenuItem<String>(
+                            value: client.name,
+                            child: Text(client.name),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            dropdownClient = newValue;
+                            assigned.text = dropdownClient!;
+                          });
+                        },
                       ),
+                      // },
+                      //   icon: Icon(Icons.keyboard_arrow_down),
+                      // ),
                     ),
                   ),
                 )),

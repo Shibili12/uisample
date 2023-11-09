@@ -16,12 +16,18 @@ class ClientDb {
   final String secondarynumber;
   @HiveField(5)
   String? id;
+  @HiveField(6)
+  double? latittude;
+  @HiveField(7)
+  double? longittude;
   ClientDb({
     required this.name,
     required this.phonenumber,
     required this.place,
     required this.email,
     required this.secondarynumber,
+    this.latittude,
+    this.longittude,
   }) {
     id = DateTime.now().microsecondsSinceEpoch.toString();
   }

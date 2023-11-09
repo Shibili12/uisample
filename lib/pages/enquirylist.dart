@@ -14,7 +14,6 @@ class Enquirylistspage extends StatefulWidget {
 
 class _EnquirylistspageState extends State<Enquirylistspage> {
   List<Enquiry> enquiries = [];
-  List<Selectedproducts> products = [];
 
   void retrieveEnquiries() async {
     Box<Enquiry> enquiryBox = await Hive.openBox('enquiryBox');

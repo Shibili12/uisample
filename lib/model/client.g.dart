@@ -22,13 +22,15 @@ class ClientDbAdapter extends TypeAdapter<ClientDb> {
       place: fields[3] as String,
       email: fields[2] as String,
       secondarynumber: fields[4] as String,
+      latittude: fields[6] as double?,
+      longittude: fields[7] as double?,
     )..id = fields[5] as String?;
   }
 
   @override
   void write(BinaryWriter writer, ClientDb obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.name)
       ..writeByte(1)
@@ -40,7 +42,11 @@ class ClientDbAdapter extends TypeAdapter<ClientDb> {
       ..writeByte(4)
       ..write(obj.secondarynumber)
       ..writeByte(5)
-      ..write(obj.id);
+      ..write(obj.id)
+      ..writeByte(6)
+      ..write(obj.latittude)
+      ..writeByte(7)
+      ..write(obj.longittude);
   }
 
   @override
