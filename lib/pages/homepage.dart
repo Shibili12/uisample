@@ -9,6 +9,8 @@ import 'package:uisample/main.dart';
 import 'package:uisample/pages/addclientpage.dart';
 import 'package:uisample/pages/callLogspage.dart';
 import 'package:uisample/pages/clientslistpage.dart';
+import 'package:uisample/pages/complaintpage.dart';
+import 'package:uisample/pages/complaintslist.dart';
 import 'package:uisample/pages/enquirylist.dart';
 import 'package:uisample/pages/loginpage.dart';
 import 'package:uisample/pages/newEnquirypage.dart';
@@ -263,13 +265,19 @@ class _MyhomepageState extends State<Myhomepage> {
               name: "Add Complaints",
               color: Colors.orange,
               icon: Icons.note_add_sharp,
-              ontap: () {},
+              ontap: () {
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => Complaintpage()));
+              },
             ),
             Homecard(
               name: "Complaints",
               color: Colors.blue,
               icon: Icons.article_rounded,
-              ontap: () {},
+              ontap: () {
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => Complaintslist()));
+              },
             ),
           ],
         ),
