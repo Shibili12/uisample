@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uisample/model/client.dart';
@@ -53,6 +54,11 @@ class _AddClientPageState extends State<AddClientPage> {
         title: Text("Add Client"),
         elevation: 0,
         actions: [
+          IconButton(
+              onPressed: () {
+                _scanDocument();
+              },
+              icon: Icon(Icons.document_scanner_outlined)),
           TextButton(
             onPressed: () {
               if (widget.clients != null) {
@@ -239,6 +245,45 @@ class _AddClientPageState extends State<AddClientPage> {
       });
     } catch (e) {
       debugPrint("$e");
+    }
+  }
+
+  Future<void> _scanDocument() async {
+    XFile? scannedImage = await _picker.pickImage(source: ImageSource.camera);
+    if (scannedImage != null) {
+      final inputimage = InputImage.fromFilePath(scannedImage.path);
+      final textRecoganizer = TextRecognizer();
+      try {
+        final RecognizedText textRecognized =
+            await textRecoganizer.processImage(inputimage);
+        if (textRecognized.blocks.isNotEmpty) {
+          for (TextBlock block in textRecognized.blocks) {
+            for (TextLine line in block.lines) {
+              String text = line.text;
+
+              if (text.toLowerCase().contains('name')) {
+                setState(() {
+                  namecontroller.text = text.replaceAll('Name', '').trim();
+                });
+              } else if (text.toLowerCase().trim().length == 10 ||
+                  text.toLowerCase().contains('+91') ||
+                  text.toLowerCase().contains('phone')) {
+                setState(() {
+                  phonecontroller.text = text.replaceAll('Phone', '').trim();
+                });
+              } else if (text.toLowerCase().contains('@')) {
+                setState(() {
+                  emailcontroller.text = text.replaceAll('Email', '').trim();
+                });
+              }
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint("Error extracting text: $e");
+      } finally {
+        await textRecoganizer.close();
+      }
     }
   }
 }
