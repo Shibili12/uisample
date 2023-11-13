@@ -20,6 +20,8 @@ class ClientDb {
   double? latittude;
   @HiveField(7)
   double? longittude;
+  @HiveField(8)
+  final String profileImage;
   ClientDb({
     required this.name,
     required this.phonenumber,
@@ -28,6 +30,7 @@ class ClientDb {
     required this.secondarynumber,
     this.latittude,
     this.longittude,
+    required this.profileImage,
   }) {
     id = DateTime.now().microsecondsSinceEpoch.toString();
   }

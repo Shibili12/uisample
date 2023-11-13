@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hive/hive.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:uisample/model/client.dart';
 
 class AddClientPage extends StatefulWidget {
@@ -24,6 +27,9 @@ class _AddClientPageState extends State<AddClientPage> {
   late bool servicepermission = false;
   late LocationPermission permission;
   String currentadress = "";
+  final ImagePicker _picker = ImagePicker();
+  XFile? _pickedImage;
+  var imagePath;
 
   @override
   void initState() {
@@ -68,54 +74,78 @@ class _AddClientPageState extends State<AddClientPage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: namecontroller,
-              decoration: const InputDecoration(
-                hintText: "Enter your Name",
-                labelText: "Full Name",
-              ),
-            ),
-            TextField(
-              controller: phonecontroller,
-              decoration: const InputDecoration(
-                hintText: " Enter your Primary  Number",
-                labelText: "Primary  Number",
-              ),
-            ),
-            TextField(
-              controller: secondary,
-              decoration: const InputDecoration(
-                hintText: " Enter your secondary Number",
-                labelText: "Secondary  Number",
-              ),
-            ),
-            TextField(
-              controller: emailcontroller,
-              decoration: const InputDecoration(
-                labelText: "Email Id",
-                hintText: "Enter your email",
-              ),
-            ),
-            TextField(
-              controller: placecontroller,
-              decoration: InputDecoration(
-                labelText: "Location",
-                hintText: "Enter your place",
-                suffixIcon: IconButton(
-                  onPressed: () async {
-                    _currentlocation = await _getCurrentlocation();
-                    await _getaddressfromcordinator();
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              GestureDetector(
+                onTap: () async {
+                  XFile? pickedImage = await _picker.pickImage(
+                    source: ImageSource.gallery,
+                  );
+
+                  if (pickedImage != null) {
                     setState(() {
-                      placecontroller.text = currentadress;
+                      _pickedImage = pickedImage;
                     });
-                  },
-                  icon: Icon(Icons.location_on),
+                  }
+                },
+                child: CircleAvatar(
+                  radius: 60,
+                  backgroundColor: Colors.grey[300],
+                  backgroundImage: _pickedImage != null
+                      ? FileImage(File(_pickedImage!.path))
+                      : imagePath != null
+                          ? FileImage(File(imagePath))
+                          : null,
                 ),
               ),
-            ),
-          ],
+              TextField(
+                controller: namecontroller,
+                decoration: const InputDecoration(
+                  hintText: "Enter your Name",
+                  labelText: "Full Name",
+                ),
+              ),
+              TextField(
+                controller: phonecontroller,
+                decoration: const InputDecoration(
+                  hintText: " Enter your Primary  Number",
+                  labelText: "Primary  Number",
+                ),
+              ),
+              TextField(
+                controller: secondary,
+                decoration: const InputDecoration(
+                  hintText: " Enter your secondary Number",
+                  labelText: "Secondary  Number",
+                ),
+              ),
+              TextField(
+                controller: emailcontroller,
+                decoration: const InputDecoration(
+                  labelText: "Email Id",
+                  hintText: "Enter your email",
+                ),
+              ),
+              TextField(
+                controller: placecontroller,
+                decoration: InputDecoration(
+                  labelText: "Location",
+                  hintText: "Enter your place",
+                  suffixIcon: IconButton(
+                    onPressed: () async {
+                      _currentlocation = await _getCurrentlocation();
+                      await _getaddressfromcordinator();
+                      setState(() {
+                        placecontroller.text = currentadress;
+                      });
+                    },
+                    icon: Icon(Icons.location_on),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -136,6 +166,7 @@ class _AddClientPageState extends State<AddClientPage> {
         secondarynumber: secondaryno,
         latittude: _currentlocation!.latitude,
         longittude: _currentlocation!.longitude,
+        profileImage: _pickedImage!.path,
       );
       await clientBox.add(clientmodel);
       setState(() {
@@ -158,6 +189,7 @@ class _AddClientPageState extends State<AddClientPage> {
         placecontroller.text = element.place;
         emailcontroller.text = element.email;
         secondary.text = element.secondarynumber;
+        imagePath = element.profileImage;
       });
     }
   }
@@ -165,18 +197,23 @@ class _AddClientPageState extends State<AddClientPage> {
   updateClientfromHive(ClientDb client) async {
     final index = savedClients.indexWhere((element) => element.id == client.id);
     if (index != -1) {
-      final updatedClient = ClientDb(
-        name: namecontroller.text,
-        phonenumber: phonecontroller.text,
-        place: placecontroller.text,
-        email: emailcontroller.text,
-        secondarynumber: secondary.text,
-        latittude: _currentlocation!.latitude,
-        longittude: _currentlocation!.longitude,
-      );
-      savedClients[index] = updatedClient;
-      await clientBox.putAt(index, updatedClient);
-      setState(() {});
+      print("object" + savedClients[index].profileImage.toString());
+      if (_currentlocation != null && _pickedImage != null) {
+        final updatedClient = ClientDb(
+          name: namecontroller.text,
+          phonenumber: phonecontroller.text,
+          place: placecontroller.text,
+          email: emailcontroller.text,
+          secondarynumber: secondary.text,
+          latittude: _currentlocation!.latitude,
+          longittude: _currentlocation!.longitude,
+          profileImage: _pickedImage!.path,
+        );
+        savedClients[index] = updatedClient;
+        await clientBox.putAt(index, updatedClient);
+        setState(() {});
+        print("object" + savedClients[index].profileImage.toString());
+      }
     }
   }
 

@@ -60,6 +60,7 @@ dependencies:
   hive_flutter: ^1.1.0
   uuid: ^4.1.0
   google_maps_flutter: ^2.5.0
+  image_picker: ^1.0.4
   
   # firebase_analytics: ^10.6.1
 
