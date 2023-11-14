@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:uisample/model/complaints.dart';
 import 'package:uisample/model/enquiry.dart';
 import 'package:uisample/model/selectedproduct.dart';
+import 'package:record/record.dart';
 
 class Complaintpage extends StatefulWidget {
   const Complaintpage({super.key});
@@ -34,6 +37,9 @@ class _ComplaintpageState extends State<Complaintpage> {
   List<Selectedproducts> productselected = [];
   late Box<Complaint> complaintBox;
   List<Complaint> savedcomplaints = [];
+  final record = AudioRecorder();
+  bool isRecording = false;
+  String audioFilepath = "";
 
   @override
   void initState() {
@@ -42,6 +48,27 @@ class _ComplaintpageState extends State<Complaintpage> {
     // loadEnquiryData();
     complaintBox = Hive.box<Complaint>('complaints');
     savedcomplaints = complaintBox.values.toList();
+  }
+
+  Future<void> statRecording() async {
+    String timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+    String fileName = 'audio_file_$timestamp.mp3';
+    String customPath =
+        (await getApplicationDocumentsDirectory()).path + fileName;
+    if (await record.hasPermission()) {
+      await record.start(RecordConfig(), path: customPath);
+      setState(() {
+        isRecording = true;
+      });
+    }
+  }
+
+  Future<void> stopRecording() async {
+    String? path = await record.stop();
+    setState(() {
+      isRecording = false;
+      audioFilepath = path!;
+    });
   }
 
   void loadEnquiryData(String searchTerm) async {
@@ -78,6 +105,11 @@ class _ComplaintpageState extends State<Complaintpage> {
         title: Text("Add Complaints"),
         elevation: 0,
         actions: [
+          IconButton(
+            onPressed: isRecording == true ? stopRecording : statRecording,
+            icon:
+                Icon(isRecording == true ? Icons.stop_circle : Icons.mic_none),
+          ),
           TextButton(
             onPressed: () {
               addComplaintToHive();
@@ -401,6 +433,7 @@ class _ComplaintpageState extends State<Complaintpage> {
       referedby: refer,
       email: emailid,
       remarks: remark,
+      audiopath: audioFilepath,
     );
     await complaintBox.add(complaintmodel);
     setState(() {

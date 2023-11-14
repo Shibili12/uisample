@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:uisample/model/complaints.dart';
@@ -12,12 +13,21 @@ class Complaintslist extends StatefulWidget {
 class _ComplaintslistState extends State<Complaintslist> {
   List<Complaint> complaints = [];
   late Box<Complaint> complaintBox;
+  List<AudioPlayer> audioPlayer = [];
+  List<bool> isPlaying = [];
+  List<Duration> duration = [];
+  List<Duration> position = [];
+  int currentlyPlayingIndex = -1;
 
   void retrieveComplaints() async {
     complaintBox = await Hive.openBox('complaints');
     List<Complaint> retrievedcomplaints = complaintBox.values.toList();
     setState(() {
       complaints = retrievedcomplaints;
+      audioPlayer = List.generate(complaints.length, (index) => AudioPlayer());
+      isPlaying = List.generate(complaints.length, (index) => false);
+      duration = List.generate(complaints.length, (index) => Duration());
+      position = List.generate(complaints.length, (index) => Duration());
     });
   }
 
@@ -26,6 +36,30 @@ class _ComplaintslistState extends State<Complaintslist> {
     // TODO: implement initState
     super.initState();
     retrieveComplaints();
+  }
+
+  void playAudio(String audioPath, int index) {
+    // Listen for player state changes
+    audioPlayer[index].onPlayerStateChanged.listen((PlayerState state) {
+      setState(() {
+        isPlaying[index] = state == PlayerState.playing;
+      });
+    });
+
+    // Listen for player position changes
+    audioPlayer[index].onPositionChanged.listen((Duration newPosition) {
+      setState(() {
+        position[index] = newPosition;
+      });
+    });
+
+    // Listen for player duration changes
+    audioPlayer[index].onDurationChanged.listen((Duration newDuration) {
+      setState(() {
+        duration[index] = newDuration;
+      });
+    });
+    audioPlayer[index].play(DeviceFileSource(audioPath));
   }
 
   @override
@@ -37,13 +71,53 @@ class _ComplaintslistState extends State<Complaintslist> {
         elevation: 0,
       ),
       body: ListView.separated(
-        itemBuilder: (context, index) => ListTile(
+        itemBuilder: (context, index) => ExpansionTile(
           title: Text(complaints[index].name),
           subtitle: Text(complaints[index].remarks),
+          children: [
+            complaints[index].audiopath == null
+                ? SizedBox(
+                    child: Center(
+                      child: Text("No audio"),
+                    ),
+                  )
+                : Row(
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          playAudio(complaints[index].audiopath!, index);
+                          print("audio:" +
+                              complaints[index].audiopath.toString());
+                        },
+                        icon: Icon(
+                            isPlaying[index] ? Icons.pause : Icons.play_arrow),
+                      ),
+                      Expanded(
+                        flex: 6,
+                        child: Slider(
+                          min: 0,
+                          max: duration[index].inSeconds.toDouble(),
+                          value: position[index]
+                              .inSeconds
+                              .toDouble()
+                              .clamp(0, duration[index].inSeconds.toDouble()),
+                          onChanged: (value) {
+                            seekAudio(index, value);
+                          },
+                        ),
+                      ),
+                    ],
+                  )
+          ],
         ),
         separatorBuilder: (context, index) => Divider(),
         itemCount: complaints.length,
       ),
     );
+  }
+
+  Future<void> seekAudio(int index, double value) async {
+    final positionDuration = Duration(seconds: value.toInt());
+    await audioPlayer[index].seek(positionDuration);
   }
 }

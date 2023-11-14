@@ -36,6 +36,8 @@ class Complaint {
   String? id;
   @HiveField(15)
   final String remarks;
+  @HiveField(16)
+  String? audiopath;
   Complaint({
     required this.primarynumber,
     required this.name,
@@ -52,6 +54,7 @@ class Complaint {
     required this.referedby,
     required this.email,
     required this.remarks,
+    this.audiopath,
   }) {
     id = DateTime.now().microsecondsSinceEpoch.toString();
   }
