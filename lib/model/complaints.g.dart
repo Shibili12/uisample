@@ -33,13 +33,14 @@ class ComplaintAdapter extends TypeAdapter<Complaint> {
       email: fields[13] as String,
       remarks: fields[15] as String,
       audiopath: fields[16] as String?,
+      mediapath: (fields[17] as List?)?.cast<String>(),
     )..id = fields[14] as String?;
   }
 
   @override
   void write(BinaryWriter writer, Complaint obj) {
     writer
-      ..writeByte(17)
+      ..writeByte(18)
       ..writeByte(0)
       ..write(obj.primarynumber)
       ..writeByte(1)
@@ -73,7 +74,9 @@ class ComplaintAdapter extends TypeAdapter<Complaint> {
       ..writeByte(15)
       ..write(obj.remarks)
       ..writeByte(16)
-      ..write(obj.audiopath);
+      ..write(obj.audiopath)
+      ..writeByte(17)
+      ..write(obj.mediapath);
   }
 
   @override
