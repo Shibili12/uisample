@@ -34,7 +34,6 @@ class _ViewenquirypageState extends State<Viewenquirypage> {
         }
       }
     } catch (e) {
-      // Handle exceptions (e.g., box not found, etc.)
       print('Error initializing: $e');
     }
   }
@@ -42,10 +41,9 @@ class _ViewenquirypageState extends State<Viewenquirypage> {
   @override
   Widget build(BuildContext context) {
     double netAmount = calculateNetAmount(productselected);
-    double taxAmount = calculateTaxAmount(
-        netAmount, 5.0); // Assuming a 5% tax rate, change it as needed
-    double discount = 0.0; // You can set the discount based on your logic
-    double deduction = 0.0; // You can set the deduction based on your logic
+    double taxAmount = calculateTaxAmount(netAmount, 5.0);
+    double discount = 0.0;
+    double deduction = 0.0;
     double grandTotal =
         calculateGrandTotal(netAmount, discount, taxAmount, deduction);
     netAmount = double.parse(netAmount.toStringAsFixed(2));
@@ -397,10 +395,7 @@ class _ViewenquirypageState extends State<Viewenquirypage> {
         .where((product) => product.enquiryId == enquiryId)
         .toList();
 
-    // Update the product list in your UI
-    setState(() {
-      // Update the product list in your UI
-    });
+    setState(() {});
     print(productselected.length);
   }
 
