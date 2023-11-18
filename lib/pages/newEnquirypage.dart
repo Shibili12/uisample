@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/utils.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
@@ -44,6 +45,7 @@ class _NewenquiryState extends State<Newenquiry> {
   List<Enquiry> saveddata = [];
   late Box<Selectedproducts> selectedProductsBox;
   List<Selectedproducts> productSelected = [];
+  double discount = 0;
 
   List<ClientDb> clients = [];
   String? dropdownClient;
@@ -67,24 +69,24 @@ class _NewenquiryState extends State<Newenquiry> {
               taxamound: '0',
               salesvalue: '0');
           productdetails.add(productDetails);
-          if (widget.enquiries == null) {
-            saveSelectedProductsToHive(productDetails);
-          } else {
-            for (var key in enquiryBox.keys) {
-              var value = enquiryBox.get(key);
-              print("hello welcome");
-              print("result :" + widget.enquiries!.contains(value).toString());
-              print("Key " + key.toString());
-              print("value " + value!.name.toString());
+          // if (widget.enquiries == null) {
+          //   saveSelectedProductsToHive(productDetails);
+          // } else {
+          // for (var key in enquiryBox.keys) {
+          //   var value = enquiryBox.get(key);
+          //   // print("hello welcome");
+          //   // print("result :" + widget.enquiries!.contains(value).toString());
+          //   // print("Key " + key.toString());
+          //   // print("value " + value!.name.toString());
 
-              if (widget.enquiries!.contains(value)) {
-                var enqid = key.toString();
-                print("hello hi");
-                print("Key: $enqid");
-                updateSelectedProductInHive(enqid, productDetails);
-              }
-            }
-          }
+          //   if (widget.enquiries!.contains(value)) {
+          //     var enqid = key.toString();
+          //     // print("hello hi");
+          //     // print("Key: $enqid");
+          //     updateSelectedProductInHive(enqid, productDetails);
+          //   }
+          // }
+          // }
           //   }
           // }
         }
@@ -129,28 +131,30 @@ class _NewenquiryState extends State<Newenquiry> {
     // }
   }
 
-  Future<void> saveSelectedProductsToHive(products) async {
+  Future<void> saveSelectedProductsToHive(saveproducts) async {
     var enqid;
 
     for (var key in enquiryBox.keys) {
       enqid = key.toString();
     }
+    for (var products in saveproducts) {
+      final selectModel = Selectedproducts(
+        title: products.name ?? "",
+        price: int.parse(products.price),
+        total: products.total ?? "",
+        tax: products.tax ?? "",
+        taxamound: products.taxamound ?? "",
+        salesvalue: products.salesvalue ?? "",
+        qty: products.qty ?? "",
+        enquiryId: enqid,
+      );
+      await selectedProductsBox.add(selectModel);
 
-    final selectModel = Selectedproducts(
-      title: products.name ?? "",
-      price: int.parse(products.price),
-      total: products.total ?? "",
-      tax: products.tax ?? "",
-      taxamound: products.taxamound ?? "",
-      salesvalue: products.salesvalue ?? "",
-      qty: products.qty ?? "",
-      enquiryId: enqid,
-    );
-    await selectedProductsBox.add(selectModel);
-    setState(() {
-      productSelected.add(selectModel);
-      print('selected' + productSelected.toString());
-    });
+      setState(() {
+        productSelected.add(selectModel);
+        print('selected' + productSelected.toString());
+      });
+    }
   }
 
   Future<void> retrieveSelectedProductsFromHive() async {
@@ -302,37 +306,57 @@ class _NewenquiryState extends State<Newenquiry> {
   }
 
   Future<void> updateSelectedProductInHive(
-      String enquiryId, updatedProduct) async {
+    String enquiryId,
+    List<ProductDetails> updatedProducts,
+  ) async {
     final enqid = enquiryId;
     print(" id enq:$enqid");
     final selectedProductsForEnquiry = <Selectedproducts>[];
     final existingProducts = selectedProductsBox.values.toList();
-    for (var product in existingProducts) {
-      if (product.enquiryId == enqid) {
-        selectedProductsForEnquiry.add(product);
+    // final index =
+    //     productSelected.indexWhere((element) => element.enquiryId == enquiryId);
+    // print("index:" + index.toString());
+
+    for (var product in updatedProducts) {
+      // Check if a product with the same enquiryId and title already exists
+      var existingProduct = existingProducts.firstWhereOrNull(
+        (p) => p.enquiryId == enqid && p.title == product.name,
+      );
+
+      if (existingProduct != null) {
+        // Update existing product title
+        existingProduct.title = product.name ?? "";
+        existingProduct.price = int.parse(product.price);
+        existingProduct.total = product.total ?? "";
+        existingProduct.tax = product.tax ?? "";
+        existingProduct.taxamound = product.taxamound ?? "";
+        existingProduct.salesvalue = product.salesvalue ?? "";
+        existingProduct.qty = product.qty ?? "";
+
+        // Save the updated product back to Hive
+        // await selectedProductsBox.putAt(index, existingProduct);
+
+        // Add the updated product to the list
+        selectedProductsForEnquiry.add(existingProduct);
+      } else {
+        final model = Selectedproducts(
+          title: product.name ?? "",
+          price: int.parse(product.price),
+          total: product.total ?? "",
+          tax: product.tax ?? "",
+          taxamound: product.taxamound ?? "",
+          salesvalue: product.salesvalue ?? "",
+          qty: product.qty ?? "",
+          enquiryId: enqid,
+        );
+        await selectedProductsBox.add(model);
+        selectedProductsForEnquiry.add(model);
       }
+
+      setState(() {
+        productSelected = selectedProductsForEnquiry;
+      });
     }
-    // for (var product in updatedProduct) {
-    final model = Selectedproducts(
-      title: updatedProduct.name ?? "",
-      price: int.parse(updatedProduct.price),
-      total: updatedProduct.total ?? "",
-      tax: updatedProduct.tax ?? "",
-      taxamound: updatedProduct.taxamound ?? "",
-      salesvalue: updatedProduct.salesvalue ?? "",
-      qty: updatedProduct.qty ?? "",
-      enquiryId: enqid.toString(),
-    );
-    await selectedProductsBox.add(model);
-    selectedProductsForEnquiry.add(model);
-    print("updatedProduct ${updatedProduct.name}");
-    print("selected products:$selectedProductsForEnquiry");
-    print(" id ${model.enquiryId}");
-    print(" title ${model.title}");
-    // }
-    setState(() {
-      productSelected = selectedProductsForEnquiry;
-    });
   }
 
   @override
@@ -341,19 +365,27 @@ class _NewenquiryState extends State<Newenquiry> {
       appBar: AppBar(
         title: const Text("New Lead"),
         actions: [
-          Icon(Icons.mic),
-          SizedBox(
+          const Icon(Icons.mic),
+          const SizedBox(
             width: 10,
           ),
           TextButton(
             onPressed: () {
               if (widget.enquiries != null) {
-                for (var element in widget.enquiries!) {
-                  print(element.name);
-                  updateEnquiry(element);
-                  Navigator.of(context).pop(true);
+                updateEnquiry(widget.enquiries![0]);
+                for (var key in enquiryBox.keys) {
+                  var value = enquiryBox.get(key);
+                  print("Checking key: $key, value: $value");
+                  print(widget.enquiries!.contains(value));
+                  if (!widget.enquiries!.contains(value)) {
+                    var enqid = key.toString();
+                    print("hi heloo, enqid: $enqid");
+                    updateSelectedProductInHive(enqid, productdetails);
+                  }
                 }
+                Navigator.of(context).pop(true);
               } else {
+                saveSelectedProductsToHive(productdetails);
                 Navigator.of(context).pop();
               }
             },
@@ -970,6 +1002,10 @@ class _NewenquiryState extends State<Newenquiry> {
                     String tax = taxcontroller.text;
                     String taxamount = taxamound.text;
                     String sales = salesvalue.text;
+                    var equid;
+                    for (var key in enquiryBox.keys) {
+                      equid = key.toString();
+                    }
 
                     setState(() {
                       if (productdetails.isEmpty) {
@@ -986,12 +1022,25 @@ class _NewenquiryState extends State<Newenquiry> {
                         productdetails.add(newProduct);
                       } else {
                         // Updating existing product
+                        // Selectedproducts model = Selectedproducts(
+                        //   title: name,
+                        //   price: int.parse(price),
+                        //   total: total,
+                        //   tax: tax,
+                        //   taxamound: taxamount,
+                        //   salesvalue: sales,
+                        //   qty: qty,
+                        //   enquiryId: equid,
+                        // );
 
-                        details.qty = qtycontroller.text;
-                        details.tax = taxcontroller.text;
-                        details.total = totalcontroller.text;
-                        details.taxamound = taxamound.text;
-                        details.salesvalue = salesvalue.text;
+                        // selectedProductsBox.put(equid, model);
+                        // productdetails.
+
+                        // details.qty = qtycontroller.text;
+                        // details.tax = taxcontroller.text;
+                        // details.total = totalcontroller.text;
+                        // details.taxamound = taxamound.text;
+                        // details.salesvalue = salesvalue.text;
                       }
 
                       print("Index: $productdetails");
@@ -1091,8 +1140,10 @@ class _NewenquiryState extends State<Newenquiry> {
     double discountedPrice;
     if (discountType == 'percentage') {
       discountedPrice = originalPrice - (originalPrice * discountValue / 100);
+      discount = originalPrice * discountValue / 100;
     } else {
       discountedPrice = originalPrice - discountValue;
+      discount = discountValue;
     }
     return discountedPrice;
   }

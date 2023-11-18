@@ -38,8 +38,8 @@ class Complaint {
   final String remarks;
   @HiveField(16)
   String? audiopath;
-  @HiveField(17)
-  List<String>? mediapath;
+  // @HiveField(17)
+  // List<String>? mediapath;
   Complaint({
     required this.primarynumber,
     required this.name,
@@ -57,7 +57,7 @@ class Complaint {
     required this.email,
     required this.remarks,
     this.audiopath,
-    this.mediapath,
+    // this.mediapath,
   }) {
     id = DateTime.now().microsecondsSinceEpoch.toString();
   }

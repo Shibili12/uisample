@@ -7,21 +7,21 @@ class Selectedproducts {
   @HiveField(0)
   String? id;
   @HiveField(1)
-  final String title;
+  String title;
   @HiveField(2)
-  final int price;
+  int price;
   @HiveField(3)
-  final String total;
+  String total;
   @HiveField(4)
-  final String tax;
+  String tax;
   @HiveField(5)
-  final String taxamound;
+  String taxamound;
   @HiveField(6)
-  final String salesvalue;
+  String salesvalue;
   @HiveField(7)
-  final String qty;
+  String qty;
   @HiveField(8)
-  final String enquiryId;
+  String enquiryId;
   Selectedproducts({
     required this.title,
     required this.price,
