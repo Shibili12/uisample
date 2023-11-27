@@ -11,13 +11,15 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uisample/model/complaints.dart';
 import 'package:uisample/model/enquiry.dart';
+
 import 'package:uisample/model/selectedproduct.dart';
 import 'package:record/record.dart';
 import 'package:video_compress/video_compress.dart';
 import 'package:video_player/video_player.dart';
 
 class Complaintpage extends StatefulWidget {
-  const Complaintpage({super.key});
+  List<Complaint>? complaints;
+  Complaintpage({super.key, this.complaints});
 
   @override
   State<Complaintpage> createState() => _ComplaintpageState();
@@ -49,6 +51,7 @@ class _ComplaintpageState extends State<Complaintpage> {
   final record = AudioRecorder();
   bool isRecording = false;
   String audioFilepath = "";
+
   File? _selectedFile;
   VideoPlayerController? _videoPlayerController;
   ChewieController? _chewieController;
@@ -62,8 +65,14 @@ class _ComplaintpageState extends State<Complaintpage> {
     // TODO: implement initState
     super.initState();
     // loadEnquiryData();
+
     complaintBox = Hive.box<Complaint>('complaints');
     savedcomplaints = complaintBox.values.toList();
+    // complaintBox.clear();
+    // savedcomplaints.clear();
+    if (widget.complaints != null) {
+      retrieveComplaintFromHive();
+    }
   }
 
   Future<void> statRecording() async {
@@ -133,11 +142,16 @@ class _ComplaintpageState extends State<Complaintpage> {
           ),
           TextButton(
             onPressed: () {
-              addComplaintToHive();
-              Navigator.of(context).pop();
+              if (widget.complaints == null) {
+                addComplaintToHive();
+                Navigator.of(context).pop();
+              } else {
+                updateComplaint(widget.complaints![0]);
+                Navigator.of(context).pop(true);
+              }
             },
             child: Text(
-              "ADD",
+              widget.complaints == null ? "ADD" : "UPDATE",
               style: TextStyle(color: Colors.white),
             ),
           ),
@@ -438,6 +452,7 @@ class _ComplaintpageState extends State<Complaintpage> {
     final loc = location.text;
     final refer = refered.text;
     final remark = remarktext.text;
+    List<String>? mediaPaths = _selectedFiles.map((file) => file.path).toList();
     final complaintmodel = Complaint(
       primarynumber: primarynumber,
       name: leadname,
@@ -455,13 +470,13 @@ class _ComplaintpageState extends State<Complaintpage> {
       email: emailid,
       remarks: remark,
       audiopath: audioFilepath,
-      // mediapath: selectedMediaList,
+      mediapath: mediaPaths,
     );
     await complaintBox.add(complaintmodel);
     setState(() {
       savedcomplaints.add(complaintmodel);
     });
-    primary.clear();
+
     name.clear();
     secondary.clear();
     whatsapp.clear();
@@ -476,6 +491,67 @@ class _ComplaintpageState extends State<Complaintpage> {
     location.clear();
     refered.clear();
     remarktext.clear();
+  }
+
+  void retrieveComplaintFromHive() {
+    for (var element in widget.complaints!) {
+      // Set the retrieved data into the text fields
+      List<File> files =
+          element.mediapath?.map((path) => File(path)).toList() ?? [];
+      setState(() {
+        primary.text = element.primarynumber;
+        name.text = element.name;
+        secondary.text = element.secondarynumber;
+        whatsapp.text = element.whatsappnumber;
+        outside.text = element.outsidemob;
+        email.text = element.email;
+        dateinput.text = element.followdate;
+        timecontroller.text = element.followtime;
+        expdate.text = element.expclosure;
+        source.text = element.source;
+        assigned.text = element.assigneduser;
+        taguser.text = element.taguser;
+        location.text = element.location;
+        refered.text = element.referedby;
+        remarktext.text = element.remarks;
+        _selectedFiles = files;
+      });
+    }
+  }
+
+  void updateComplaint(Complaint updatedcomplaint) async {
+    final index = savedcomplaints
+        .indexWhere((element) => element.id == updatedcomplaint.id);
+    print("index:$index");
+
+    if (index != -1) {
+      List<String>? mediaPaths =
+          _selectedFiles.map((file) => file.path).toList();
+      // saveddata.removeAt(index);
+      // await enquiryBox.delete(updatedEnquiry.id);
+      final updatedmodel = Complaint(
+          primarynumber: primary.text,
+          name: name.text,
+          secondarynumber: secondary.text,
+          whatsappnumber: whatsapp.text,
+          outsidemob: outside.text,
+          followdate: dateinput.text,
+          followtime: timecontroller.text,
+          expclosure: expdate.text,
+          source: source.text,
+          assigneduser: assigned.text,
+          taguser: taguser.text,
+          location: location.text,
+          referedby: refered.text,
+          remarks: remarktext.text,
+          mediapath: mediaPaths,
+          email: email.text);
+      savedcomplaints[index] = updatedmodel;
+
+      await complaintBox.put(index, updatedmodel);
+
+      setState(() {});
+    }
   }
 
   Future<File> compressImage(File file) async {
@@ -691,6 +767,7 @@ class _ComplaintpageState extends State<Complaintpage> {
     if (pickedFiles != null) {
       for (var pickedFile in pickedFiles) {
         File compressedFile = await compressImage(File(pickedFile.path));
+
         _selectedFiles.add(compressedFile);
       }
       ScaffoldMessenger.of(context)

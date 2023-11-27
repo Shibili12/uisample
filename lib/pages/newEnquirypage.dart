@@ -69,26 +69,6 @@ class _NewenquiryState extends State<Newenquiry> {
               taxamound: '0',
               salesvalue: '0');
           productdetails.add(productDetails);
-          // if (widget.enquiries == null) {
-          //   saveSelectedProductsToHive(productDetails);
-          // } else {
-          // for (var key in enquiryBox.keys) {
-          //   var value = enquiryBox.get(key);
-          //   // print("hello welcome");
-          //   // print("result :" + widget.enquiries!.contains(value).toString());
-          //   // print("Key " + key.toString());
-          //   // print("value " + value!.name.toString());
-
-          //   if (widget.enquiries!.contains(value)) {
-          //     var enqid = key.toString();
-          //     // print("hello hi");
-          //     // print("Key: $enqid");
-          //     updateSelectedProductInHive(enqid, productDetails);
-          //   }
-          // }
-          // }
-          //   }
-          // }
         }
       });
     }

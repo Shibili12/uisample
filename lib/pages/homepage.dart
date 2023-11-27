@@ -15,6 +15,7 @@ import 'package:uisample/pages/enquirylist.dart';
 import 'package:uisample/pages/loginpage.dart';
 import 'package:uisample/pages/newEnquirypage.dart';
 import 'package:uisample/pages/notificationpage.dart';
+import 'package:uisample/pages/orderspage.dart';
 import 'package:uisample/widegets/hometile.dart';
 
 class Myhomepage extends StatefulWidget {
@@ -250,7 +251,10 @@ class _MyhomepageState extends State<Myhomepage> {
               name: "orders",
               color: Colors.blue,
               icon: Icons.add_card_sharp,
-              ontap: () {},
+              ontap: () {
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => Orderspage()));
+              },
             ),
             Homecard(
               name: "CallLogs",

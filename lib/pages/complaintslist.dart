@@ -1,7 +1,9 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
 import 'package:uisample/model/complaints.dart';
+import 'package:uisample/pages/complaintpage.dart';
 
 class Complaintslist extends StatefulWidget {
   const Complaintslist({super.key});
@@ -71,45 +73,104 @@ class _ComplaintslistState extends State<Complaintslist> {
         elevation: 0,
       ),
       body: ListView.separated(
-        itemBuilder: (context, index) => ExpansionTile(
-          title: Text(complaints[index].name),
-          subtitle: Text(complaints[index].remarks),
-          children: [
-            complaints[index].audiopath == null
-                ? SizedBox(
-                    child: Center(
-                      child: Text("No audio"),
-                    ),
-                  )
-                : Row(
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          playAudio(complaints[index].audiopath!, index);
-                          print("audio:" +
-                              complaints[index].audiopath.toString());
-                        },
-                        icon: Icon(
-                            isPlaying[index] ? Icons.pause : Icons.play_arrow),
+        itemBuilder: (context, index) {
+          final year = DateFormat('y').format(DateTime.now());
+          final month = DateFormat('MMM').format(
+              DateTime.fromMillisecondsSinceEpoch(
+                  int.parse(complaints[index].id!)));
+          final day = DateFormat('d').format(
+              DateTime.fromMillisecondsSinceEpoch(
+                  int.parse(complaints[index].id!)));
+
+          return ExpansionTile(
+            leading: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Expanded(
+                  // flex: 1,
+                  child: Text(
+                    year,
+                    style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.yellow[600],
+                        fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    day,
+                    style: TextStyle(
+                        fontSize: 25,
+                        color: Colors.blue[600],
+                        fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Expanded(
+                  // flex: 1,
+                  child: Text(
+                    month,
+                    style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.red[600],
+                        fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            title: Text(complaints[index].name),
+            subtitle: Text(complaints[index].remarks),
+            children: [
+              TextButton(
+                onPressed: () async {
+                  final output =
+                      await Navigator.of(context).push(MaterialPageRoute(
+                          builder: (contex) => Complaintpage(
+                                complaints: [complaints[index]],
+                              )));
+                  if (output) {
+                    retrieveComplaints();
+                  }
+                },
+                child: Text("Edit"),
+              ),
+              complaints[index].audiopath == null
+                  ? SizedBox(
+                      child: Center(
+                        child: Text("No audio"),
                       ),
-                      Expanded(
-                        flex: 6,
-                        child: Slider(
-                          min: 0,
-                          max: duration[index].inSeconds.toDouble(),
-                          value: position[index]
-                              .inSeconds
-                              .toDouble()
-                              .clamp(0, duration[index].inSeconds.toDouble()),
-                          onChanged: (value) {
-                            seekAudio(index, value);
+                    )
+                  : Row(
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            playAudio(complaints[index].audiopath!, index);
+                            print("audio:" +
+                                complaints[index].audiopath.toString());
                           },
+                          icon: Icon(isPlaying[index]
+                              ? Icons.pause
+                              : Icons.play_arrow),
                         ),
-                      ),
-                    ],
-                  )
-          ],
-        ),
+                        Expanded(
+                          flex: 6,
+                          child: Slider(
+                            min: 0,
+                            max: duration[index].inSeconds.toDouble(),
+                            value: position[index]
+                                .inSeconds
+                                .toDouble()
+                                .clamp(0, duration[index].inSeconds.toDouble()),
+                            onChanged: (value) {
+                              seekAudio(index, value);
+                            },
+                          ),
+                        ),
+                      ],
+                    )
+            ],
+          );
+        },
         separatorBuilder: (context, index) => Divider(),
         itemCount: complaints.length,
       ),

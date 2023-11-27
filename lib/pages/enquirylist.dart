@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:uisample/model/enquiry.dart';
 import 'package:uisample/model/selectedproduct.dart';
 import 'package:uisample/pages/newEnquirypage.dart';
+import 'package:uisample/pages/orderspage.dart';
 import 'package:uisample/pages/viewenquirypage.dart';
 
 class Enquirylistspage extends StatefulWidget {
@@ -170,6 +171,38 @@ class _EnquirylistspageState extends State<Enquirylistspage> {
                             onTap: () {
                               Navigator.of(context).push(MaterialPageRoute(
                                   builder: (context) => Viewenquirypage(
+                                        enquiries: [enquiries[index]],
+                                      )));
+                            },
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Container(
+                          height: 80,
+                          width: 90,
+                          decoration: BoxDecoration(
+                            border: Border.all(width: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: GestureDetector(
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  Icon(
+                                    Icons.swap_horiz_outlined,
+                                    color: Colors.blue,
+                                  ),
+                                  Text("to order"),
+                                ],
+                              ),
+                            ),
+                            onTap: () {
+                              Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (context) => Orderspage(
                                         enquiries: [enquiries[index]],
                                       )));
                             },

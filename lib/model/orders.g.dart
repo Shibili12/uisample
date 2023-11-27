@@ -1,22 +1,22 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'complaints.dart';
+part of 'orders.dart';
 
 // **************************************************************************
 // TypeAdapterGenerator
 // **************************************************************************
 
-class ComplaintAdapter extends TypeAdapter<Complaint> {
+class OrderAdapter extends TypeAdapter<Order> {
   @override
-  final int typeId = 4;
+  final int typeId = 6;
 
   @override
-  Complaint read(BinaryReader reader) {
+  Order read(BinaryReader reader) {
     final numOfFields = reader.readByte();
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return Complaint(
+    return Order(
       primarynumber: fields[0] as String,
       name: fields[1] as String,
       secondarynumber: fields[2] as String,
@@ -31,16 +31,13 @@ class ComplaintAdapter extends TypeAdapter<Complaint> {
       location: fields[11] as String,
       referedby: fields[12] as String,
       email: fields[13] as String,
-      remarks: fields[15] as String,
-      audiopath: fields[16] as String?,
-      mediapath: (fields[17] as List?)?.cast<String>(),
     )..id = fields[14] as String?;
   }
 
   @override
-  void write(BinaryWriter writer, Complaint obj) {
+  void write(BinaryWriter writer, Order obj) {
     writer
-      ..writeByte(18)
+      ..writeByte(15)
       ..writeByte(0)
       ..write(obj.primarynumber)
       ..writeByte(1)
@@ -70,13 +67,7 @@ class ComplaintAdapter extends TypeAdapter<Complaint> {
       ..writeByte(13)
       ..write(obj.email)
       ..writeByte(14)
-      ..write(obj.id)
-      ..writeByte(15)
-      ..write(obj.remarks)
-      ..writeByte(16)
-      ..write(obj.audiopath)
-      ..writeByte(17)
-      ..write(obj.mediapath);
+      ..write(obj.id);
   }
 
   @override
@@ -85,7 +76,7 @@ class ComplaintAdapter extends TypeAdapter<Complaint> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is ComplaintAdapter &&
+      other is OrderAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

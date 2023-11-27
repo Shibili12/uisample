@@ -1,11 +1,9 @@
-import 'dart:io';
-
 import 'package:hive/hive.dart';
 
-part 'complaints.g.dart';
+part 'orders.g.dart';
 
-@HiveType(typeId: 4)
-class Complaint {
+@HiveType(typeId: 6)
+class Order {
   @HiveField(0)
   final String primarynumber;
   @HiveField(1)
@@ -36,13 +34,8 @@ class Complaint {
   final String email;
   @HiveField(14)
   String? id;
-  @HiveField(15)
-  final String remarks;
-  @HiveField(16)
-  String? audiopath;
-  @HiveField(17)
-  List<String>? mediapath;
-  Complaint({
+
+  Order({
     required this.primarynumber,
     required this.name,
     required this.secondarynumber,
@@ -57,11 +50,7 @@ class Complaint {
     required this.location,
     required this.referedby,
     required this.email,
-    required this.remarks,
-    this.audiopath,
-    this.mediapath,
   }) {
     id = DateTime.now().microsecondsSinceEpoch.toString();
   }
-  List<File>? get mediaFiles => mediapath?.map((path) => File(path)).toList();
 }

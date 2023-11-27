@@ -9,6 +9,9 @@ import 'package:uisample/firebase_services/firebasenotification.dart';
 import 'package:uisample/model/client.dart';
 import 'package:uisample/model/complaints.dart';
 import 'package:uisample/model/enquiry.dart';
+import 'package:uisample/model/orderproducts.dart';
+import 'package:uisample/model/orders.dart';
+
 import 'package:uisample/model/product.dart';
 import 'package:uisample/model/selectedproduct.dart';
 // import 'package:uisample/model/product.dart';
@@ -33,11 +36,16 @@ void main() async {
   Hive.registerAdapter(SelectedproductsAdapter());
   Hive.registerAdapter(ClientDbAdapter());
   Hive.registerAdapter(ComplaintAdapter());
+  Hive.registerAdapter(OrderAdapter());
+  Hive.registerAdapter(OrderproductsAdapter());
   await Hive.openBox<ProductDb>('products');
   await Hive.openBox<Enquiry>('enquiryBox');
   await Hive.openBox<Selectedproducts>('selectedProducts');
   await Hive.openBox<ClientDb>('client');
   await Hive.openBox<Complaint>('complaints');
+  await Hive.openBox<Order>('order');
+  await Hive.openBox<Orderproducts>('orderproducts');
+
   runApp(const MyApp());
 }
 
