@@ -20,7 +20,7 @@ class Newenquiry extends StatefulWidget {
   State<Newenquiry> createState() => _NewenquiryState();
 }
 
-class _NewenquiryState extends State<Newenquiry> {
+class _NewenquiryState extends State<Newenquiry> with TickerProviderStateMixin {
   TextEditingController dateinput = TextEditingController();
   TextEditingController expdate = TextEditingController();
   TextEditingController timecontroller = TextEditingController();
@@ -36,6 +36,8 @@ class _NewenquiryState extends State<Newenquiry> {
   TextEditingController email = TextEditingController();
   TextEditingController source = TextEditingController();
   TextEditingController assigned = TextEditingController();
+  late AnimationController _popupController;
+  late Animation<double> _popupScaleAnimation;
 
   var productlist = [];
   List<ProductDetails> productdetails = List.empty(growable: true);
@@ -80,6 +82,18 @@ class _NewenquiryState extends State<Newenquiry> {
     super.initState();
     _initializeHive();
     loadClientfromhive();
+    _popupController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 500),
+    );
+
+    // Initialize the scale animation
+    _popupScaleAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _popupController,
+        curve: Curves.easeInOut,
+      ),
+    );
   }
 
   Future<void> loadClientfromhive() async {
@@ -549,35 +563,34 @@ class _NewenquiryState extends State<Newenquiry> {
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
                     controller: assigned,
+                    onTap: () {
+                      showModalBottomSheet(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return Container(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: clients.map<Widget>((ClientDb client) {
+                                return ListTile(
+                                  title: Text(client.name),
+                                  onTap: () {
+                                    setState(() {
+                                      dropdownClient = client.name;
+                                      assigned.text = dropdownClient!;
+                                    });
+                                    Navigator.pop(context);
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                          );
+                        },
+                      );
+                    },
                     decoration: InputDecoration(
                       labelText: "Assigned user",
                       hintText: dropdownClient,
-                      suffixIcon:
-                          // IconButton(
-                          //   onPressed: () {
-                          DropdownButton<String>(
-                        // value: dropdownClient,
-                        icon: Icon(Icons.keyboard_arrow_down),
-                        iconSize: 30,
-                        elevation: 0,
-                        underline: SizedBox(),
-                        items: clients
-                            .map<DropdownMenuItem<String>>((ClientDb client) {
-                          return DropdownMenuItem<String>(
-                            value: client.name,
-                            child: Text(client.name),
-                          );
-                        }).toList(),
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            dropdownClient = newValue;
-                            assigned.text = dropdownClient!;
-                          });
-                        },
-                      ),
-                      // },
-                      //   icon: Icon(Icons.keyboard_arrow_down),
-                      // ),
+                      suffixIcon: Icon(Icons.keyboard_arrow_down),
                     ),
                   ),
                 )),
@@ -720,12 +733,33 @@ class _NewenquiryState extends State<Newenquiry> {
                                         : SizedBox(),
                                     ElevatedButton(
                                       onPressed: () {
+                                        _popupController.forward();
                                         showDialog(
                                           context: context,
-                                          builder: (BuildContext context) =>
-                                              openPopUp(context,
-                                                  productdetails[index]),
-                                        );
+                                          builder: (BuildContext context) {
+                                            return StatefulBuilder(
+                                              builder: (context, setState) {
+                                                return AnimatedBuilder(
+                                                  animation: _popupController,
+                                                  builder: (context, child) {
+                                                    return Transform.scale(
+                                                      scale:
+                                                          _popupScaleAnimation
+                                                              .value,
+                                                      child: openPopUp(
+                                                          context,
+                                                          productdetails[
+                                                              index]),
+                                                    );
+                                                  },
+                                                );
+                                              },
+                                            );
+                                          },
+                                        ).then((value) {
+                                          // Reset the animation controller after the popup is closed
+                                          _popupController.reset();
+                                        });
                                       },
                                       child: Text("Edit"),
                                     ),
@@ -838,12 +872,34 @@ class _NewenquiryState extends State<Newenquiry> {
     TextEditingController totalcontroller = TextEditingController();
     TextEditingController taxamound = TextEditingController();
     TextEditingController salesvalue = TextEditingController();
+
     if (details != null) {
       qtycontroller.text = details.qty ?? "";
       totalcontroller.text = details.total ?? "";
       taxcontroller.text = details.tax ?? "";
       taxamound.text = details.taxamound ?? "";
       salesvalue.text = details.salesvalue ?? "";
+    }
+    void _updateTax(String selectedTaxPercentage) {
+      setState(() {
+        try {
+          taxcontroller.text = selectedTaxPercentage;
+
+          double price = double.parse(details.price);
+          int taxValue = int.parse(taxcontroller.text);
+          print("tax" + taxValue.toString());
+          double amount = price * (taxValue / 100);
+
+          taxamound.text =
+              "${(int.parse(qtycontroller.text) * amount).toStringAsFixed(2)}";
+
+          // Convert to string to avoid formatting issues
+          salesvalue.text =
+              "${(amount + double.parse(totalcontroller.text)).toString()}";
+        } catch (e) {
+          print("Error parsing values in _updateTax: $e");
+        }
+      });
     }
 
     return AlertDialog(
@@ -912,29 +968,64 @@ class _NewenquiryState extends State<Newenquiry> {
                         controller: taxcontroller,
                         decoration: InputDecoration(
                           // labelText: 'Tax %',
-                          suffixIcon: DropdownButtonFormField(
-                            value: details != null ? taxcontroller.text : null,
-                            decoration: const InputDecoration(
-                              labelText: 'Tax %',
-                              border: OutlineInputBorder(
-                                  borderSide: BorderSide.none),
-                            ),
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                taxcontroller.text = newValue!;
-                                taxamound.text =
-                                    "${details.price * int.parse(taxcontroller.text) / 100}";
-                                salesvalue.text =
-                                    "${int.parse(qtycontroller.text) * double.parse(taxamound.text) + int.parse(totalcontroller.text)}";
-                              });
-                            },
-                            items: <String>['5', '10', '15']
-                                .map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
+                          suffixIcon: AnimatedBuilder(
+                            animation: _popupController,
+                            builder: (context, child) {
+                              return Transform.scale(
+                                scale: _popupScaleAnimation.value,
+                                child: child,
                               );
-                            }).toList(),
+                            },
+                            child: GestureDetector(
+                              onTap: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return Container(
+                                      // Adjust the container's height and styling as needed
+                                      height: 200,
+                                      child: Column(
+                                        children: [
+                                          ListTile(
+                                            title: Text('5%'),
+                                            onTap: () {
+                                              _updateTax('5');
+                                              Navigator.pop(context);
+                                            },
+                                          ),
+                                          ListTile(
+                                            title: Text('10%'),
+                                            onTap: () {
+                                              _updateTax('10');
+                                              Navigator.pop(context);
+                                            },
+                                          ),
+                                          ListTile(
+                                            title: Text('15%'),
+                                            onTap: () {
+                                              _updateTax('15');
+                                              Navigator.pop(context);
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                              child: TextField(
+                                enabled:
+                                    false, // To make the field non-editable
+                                controller: taxcontroller,
+                                decoration: InputDecoration(
+                                  labelText: 'Tax %',
+                                  suffixIcon: Icon(Icons.keyboard_arrow_down),
+                                  border: OutlineInputBorder(
+                                    borderSide: BorderSide.none,
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       )),
@@ -983,6 +1074,7 @@ class _NewenquiryState extends State<Newenquiry> {
                     String taxamount = taxamound.text;
                     String sales = salesvalue.text;
                     var equid;
+
                     for (var key in enquiryBox.keys) {
                       equid = key.toString();
                     }
@@ -1001,32 +1093,39 @@ class _NewenquiryState extends State<Newenquiry> {
                         );
                         productdetails.add(newProduct);
                       } else {
-                        // Updating existing product
-                        // Selectedproducts model = Selectedproducts(
-                        //   title: name,
-                        //   price: int.parse(price),
-                        //   total: total,
-                        //   tax: tax,
-                        //   taxamound: taxamount,
-                        //   salesvalue: sales,
-                        //   qty: qty,
-                        //   enquiryId: equid,
-                        // );
+                        // Updating existing product in the list
+                        for (int i = 0; i < productdetails.length; i++) {
+                          if (productdetails[i].name == details.name) {
+                            productdetails[i].qty = qty;
+                            productdetails[i].price = price;
+                            productdetails[i].total = total;
+                            productdetails[i].tax = tax;
+                            productdetails[i].taxamound = taxamount;
+                            productdetails[i].salesvalue = sales;
+                            break;
+                          }
+                        }
 
-                        // selectedProductsBox.put(equid, model);
-                        // productdetails.
+                        // Updating existing product in the box (selectedProductsBox)
+                        Selectedproducts model = Selectedproducts(
+                          title: name,
+                          price: int.parse(price),
+                          total: total,
+                          tax: tax,
+                          taxamound: taxamount,
+                          salesvalue: sales,
+                          qty: qty,
+                          enquiryId: equid,
+                        );
 
-                        // details.qty = qtycontroller.text;
-                        // details.tax = taxcontroller.text;
-                        // details.total = totalcontroller.text;
-                        // details.taxamound = taxamound.text;
-                        // details.salesvalue = salesvalue.text;
+                        selectedProductsBox.put(equid, model);
                       }
 
                       print("Index: $productdetails");
                       print("ProductDetails Length: ${productdetails}");
                     });
 
+                    _popupController.reverse();
                     Navigator.of(context).pop();
                   },
                   child: Text(productdetails.isEmpty ? "ADD" : "UPDATE"),
@@ -1049,7 +1148,7 @@ class _NewenquiryState extends State<Newenquiry> {
     double total = 0.0;
     for (var element in productdetails) {
       setState(() {
-        total += double.parse(element.total);
+        total += double.parse(element.salesvalue);
       });
     }
     return total;
@@ -1115,8 +1214,8 @@ class _NewenquiryState extends State<Newenquiry> {
   }
 
   double calculateDiscount() {
-    double originalPrice = calculatetotalprice(productdetails) +
-        calculatetaxamount(productdetails); // Example original price
+    double originalPrice = calculatetotalprice(productdetails);
+    // +calculatetaxamount(productdetails); // Example original price
     double discountedPrice;
     if (discountType == 'percentage') {
       discountedPrice = originalPrice - (originalPrice * discountValue / 100);

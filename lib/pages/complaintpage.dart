@@ -25,7 +25,8 @@ class Complaintpage extends StatefulWidget {
   State<Complaintpage> createState() => _ComplaintpageState();
 }
 
-class _ComplaintpageState extends State<Complaintpage> {
+class _ComplaintpageState extends State<Complaintpage>
+    with TickerProviderStateMixin {
   TextEditingController dateinput = TextEditingController();
   TextEditingController expdate = TextEditingController();
   TextEditingController timecontroller = TextEditingController();
@@ -41,6 +42,8 @@ class _ComplaintpageState extends State<Complaintpage> {
   TextEditingController email = TextEditingController();
   TextEditingController source = TextEditingController();
   TextEditingController assigned = TextEditingController();
+  late AnimationController _popupController;
+  late Animation<double> _popupScaleAnimation;
   late Box<Enquiry> enquiryBox;
   List<Enquiry> enquirylist = [];
   List<Enquiry> suggestionList = [];
@@ -73,6 +76,18 @@ class _ComplaintpageState extends State<Complaintpage> {
     if (widget.complaints != null) {
       retrieveComplaintFromHive();
     }
+    _popupController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 500),
+    );
+
+    // Initialize the scale animation
+    _popupScaleAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: _popupController,
+        curve: Curves.easeInOut,
+      ),
+    );
   }
 
   Future<void> statRecording() async {
@@ -595,160 +610,181 @@ class _ComplaintpageState extends State<Complaintpage> {
   }
 
   Future<void> onPopup(BuildContext context) async {
+    _popupController.forward();
     final result = await showDialog(
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(
-          builder: (context, setState) => AlertDialog(
-            content: SizedBox(
-              width: 200,
-              height: _selectedFiles.isNotEmpty ? 300 : 100,
-              child: _selectedFiles.isEmpty
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        TextButton.icon(
-                          label: Text("Image"),
-                          onPressed: () {
-                            Navigator.of(context).pop('image');
-                          },
-                          icon: Icon(Icons.image),
-                        ),
-                        TextButton.icon(
-                          label: Text("Video"),
-                          onPressed: () {
-                            Navigator.of(context).pop('video');
-                          },
-                          icon: Icon(Icons.video_collection_outlined),
-                        ),
-                      ],
-                    )
-                  : Column(
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _selectedFiles.length,
-                            itemBuilder: (context, index) {
-                              print("rebuilded");
-                              final file = _selectedFiles[index];
-                              late bool isSelected;
-                              isSelected = _selectedFileStates.contains(index);
-                              print(isSelected.toString());
-                              return Stack(
-                                alignment: Alignment.topRight,
-                                children: [
-                                  Container(
-                                    height: 100,
-                                    width: _isImage(file.path) ? 80 : 200,
-                                    margin: EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: Colors.grey),
-                                    ),
-                                    child: _isImage(file.path)
-                                        ? Image.file(file, fit: BoxFit.cover)
-                                        : _buildVideoPlayer(file),
+          builder: (context, setState) => AnimatedBuilder(
+              animation: _popupController,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: _popupScaleAnimation.value,
+                  child: AlertDialog(
+                    content: SizedBox(
+                      width: 200,
+                      height: _selectedFiles.isNotEmpty ? 300 : 100,
+                      child: _selectedFiles.isEmpty
+                          ? Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                TextButton.icon(
+                                  label: Text("Image"),
+                                  onPressed: () {
+                                    Navigator.of(context).pop('image');
+                                  },
+                                  icon: Icon(Icons.image),
+                                ),
+                                TextButton.icon(
+                                  label: Text("Video"),
+                                  onPressed: () {
+                                    Navigator.of(context).pop('video');
+                                  },
+                                  icon: Icon(Icons.video_collection_outlined),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              children: [
+                                Expanded(
+                                  flex: 3,
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: _selectedFiles.length,
+                                    itemBuilder: (context, index) {
+                                      print("rebuilded");
+                                      final file = _selectedFiles[index];
+                                      late bool isSelected;
+                                      isSelected =
+                                          _selectedFileStates.contains(index);
+                                      print(isSelected.toString());
+                                      return Stack(
+                                        alignment: Alignment.topRight,
+                                        children: [
+                                          Container(
+                                            height: 100,
+                                            width:
+                                                _isImage(file.path) ? 80 : 200,
+                                            margin: EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                  color: Colors.grey),
+                                            ),
+                                            child: _isImage(file.path)
+                                                ? Image.file(file,
+                                                    fit: BoxFit.cover)
+                                                : _buildVideoPlayer(file),
+                                          ),
+                                          Positioned(
+                                            top: 1.0,
+                                            right: 1.0,
+                                            child: Checkbox(
+                                              value: isSelected,
+                                              onChanged: (value) {
+                                                print(value.toString());
+                                                setState(() {
+                                                  isSelected = value ?? false;
+                                                  if (isSelected) {
+                                                    _selectedFileStates
+                                                        .add(index);
+                                                  } else {
+                                                    _selectedFileStates
+                                                        .remove(index);
+                                                  }
+                                                });
+                                              },
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    },
                                   ),
-                                  Positioned(
-                                    top: 1.0,
-                                    right: 1.0,
-                                    child: Checkbox(
-                                      value: isSelected,
-                                      onChanged: (value) {
-                                        print(value.toString());
-                                        setState(() {
-                                          isSelected = value ?? false;
-                                          if (isSelected) {
-                                            _selectedFileStates.add(index);
-                                          } else {
-                                            _selectedFileStates.remove(index);
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    IconButton(
+                                        onPressed: () {
+                                          for (var file in _selectedFiles) {
+                                            selectedMediaList.add(file.path);
                                           }
+                                          Navigator.of(context).pop();
+                                        },
+                                        icon: Icon(Icons.check_rounded)),
+                                    IconButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          _selectedFiles.removeWhere(
+                                            (file) => _selectedFileStates
+                                                .contains(_selectedFiles
+                                                    .indexOf(file)),
+                                          );
+                                          _selectedFileStates.clear();
                                         });
                                       },
+                                      icon: Icon(
+                                        Icons.delete,
+                                        color: Colors.red,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            IconButton(
-                                onPressed: () {
-                                  for (var file in _selectedFiles) {
-                                    selectedMediaList.add(file.path);
-                                  }
-                                  Navigator.of(context).pop();
-                                },
-                                icon: Icon(Icons.check_rounded)),
-                            IconButton(
-                              onPressed: () {
-                                setState(() {
-                                  _selectedFiles.removeWhere(
-                                    (file) => _selectedFileStates
-                                        .contains(_selectedFiles.indexOf(file)),
-                                  );
-                                  _selectedFileStates.clear();
-                                });
-                              },
-                              icon: Icon(
-                                Icons.delete,
-                                color: Colors.red,
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: () async {
-                                FilePickerResult? result =
-                                    await FilePicker.platform.pickFiles(
-                                  allowMultiple: true,
-                                  type: FileType.custom,
-                                  allowedExtensions: [
-                                    'jpg',
-                                    'jpeg',
-                                    'png',
-                                    'gif',
-                                    'mp4',
-                                    'mov',
-                                    'avi'
-                                  ],
-                                );
-                                if (result != null && result.files.isNotEmpty) {
-                                  List<File?> compressedFiles = [];
-                                  for (PlatformFile file in result.files) {
-                                    String filePath = file.path!;
-                                    File? compressedFile;
-                                    if (_isImage(filePath)) {
-                                      compressedFile =
-                                          await compressImage(File(filePath));
-                                    } else {
-                                      compressedFile =
-                                          await compressVideo(File(filePath));
-                                    }
-                                    compressedFiles.add(compressedFile);
-                                  }
-                                  compressedFiles
-                                      .removeWhere((file) => file == null);
-                                  _selectedFiles
-                                      .addAll(compressedFiles.cast<File>());
+                                    IconButton(
+                                      onPressed: () async {
+                                        FilePickerResult? result =
+                                            await FilePicker.platform.pickFiles(
+                                          allowMultiple: true,
+                                          type: FileType.custom,
+                                          allowedExtensions: [
+                                            'jpg',
+                                            'jpeg',
+                                            'png',
+                                            'gif',
+                                            'mp4',
+                                            'mov',
+                                            'avi'
+                                          ],
+                                        );
+                                        if (result != null &&
+                                            result.files.isNotEmpty) {
+                                          List<File?> compressedFiles = [];
+                                          for (PlatformFile file
+                                              in result.files) {
+                                            String filePath = file.path!;
+                                            File? compressedFile;
+                                            if (_isImage(filePath)) {
+                                              compressedFile =
+                                                  await compressImage(
+                                                      File(filePath));
+                                            } else {
+                                              compressedFile =
+                                                  await compressVideo(
+                                                      File(filePath));
+                                            }
+                                            compressedFiles.add(compressedFile);
+                                          }
+                                          compressedFiles.removeWhere(
+                                              (file) => file == null);
+                                          _selectedFiles.addAll(
+                                              compressedFiles.cast<File>());
 
-                                  setState(() {});
-                                  Navigator.of(context).pop();
-                                }
-                              },
-                              icon: Icon(Icons.attach_file_rounded),
+                                          setState(() {});
+                                          Navigator.of(context).pop();
+                                        }
+                                      },
+                                      icon: Icon(Icons.attach_file_rounded),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ],
                     ),
-            ),
-          ),
+                  ),
+                );
+              }),
         );
       },
     );
+    _popupController.reset();
 
     if (result != null) {
       if (result == 'image') {
