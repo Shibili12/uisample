@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:uisample/model/client.dart';
 import 'package:uisample/model/enquiry.dart';
 import 'package:uisample/model/orderproducts.dart';
 import 'package:uisample/model/orders.dart';
@@ -47,6 +48,8 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
   List<Enquiry> savedenquiry = [];
   late Box<Selectedproducts> selectedProductBx;
   List<Selectedproducts> productSelectedbx = [];
+  List<ClientDb> clients = [];
+  String? dropdownClient;
 
   Future<void> getproduct() async {
     final products = await Navigator.of(context)
@@ -70,6 +73,14 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
         }
       });
     }
+  }
+
+  Future<void> loadClientfromhive() async {
+    var clientbox = await Hive.openBox<ClientDb>('client');
+    setState(() {
+      clients = clientbox.values.toList();
+      dropdownClient = clients.isNotEmpty ? clients[0].name : null;
+    });
   }
 
   Future<void> _initializeHive() async {
@@ -98,6 +109,7 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
     // TODO: implement initState
     super.initState();
     _initializeHive();
+    loadClientfromhive();
     _popupController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 500),
@@ -131,7 +143,7 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                 Navigator.of(context).pop();
               }
             },
-            child: Text(
+            child: const Text(
               "SAVE",
               style: TextStyle(color: Colors.white),
             ),
@@ -157,7 +169,7 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                         if (value!.length < 10 || value.isEmpty) {
                           return 'Primary Number is required';
                         }
-                        // Add more specific validation logic if needed
+
                         return null;
                       },
                     ),
@@ -175,7 +187,7 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                         if (value == null || value.isEmpty) {
                           return 'Enter valid name';
                         }
-                        // Add more specific validation logic if needed
+
                         return null;
                       },
                     ),
@@ -196,7 +208,7 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                         if (value!.length < 10 || value.isEmpty) {
                           return 'secondary Number is required';
                         }
-                        // Add more specific validation logic if needed
+
                         return null;
                       },
                     ),
@@ -213,7 +225,7 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                         if (value!.length < 10 || value.isEmpty) {
                           return 'Whatsapp Number is required';
                         }
-                        // Add more specific validation logic if needed
+
                         return null;
                       },
                     ),
@@ -234,7 +246,7 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                         if (value!.length < 10 || value.isEmpty) {
                           return 'outside country mob is required';
                         }
-                        // Add more specific validation logic if needed
+
                         return null;
                       },
                     ),
@@ -251,7 +263,7 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                         if (!value!.contains("@") || value.isEmpty) {
                           return 'enter valid email';
                         }
-                        // Add more specific validation logic if needed
+
                         return null;
                       },
                     ),
@@ -266,7 +278,7 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                       padding: const EdgeInsets.all(8.0),
                       child: TextFormField(
                         controller: dateinput,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: "Follow.Date",
                           suffixIcon: Icon(Icons.calendar_month),
                         ),
@@ -285,7 +297,7 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                           if (value == null || value.isEmpty) {
                             return 'select date';
                           }
-                          // Add more specific validation logic if needed
+
                           return null;
                         },
                       ),
@@ -311,7 +323,7 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                           if (value == null || value.isEmpty) {
                             return 'select time';
                           }
-                          // Add more specific validation logic if needed
+
                           return null;
                         },
                       ),
@@ -327,7 +339,7 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                       padding: const EdgeInsets.all(8.0),
                       child: TextFormField(
                         controller: expdate,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: "Exp closure",
                           suffixIcon: Icon(Icons.calendar_month),
                         ),
@@ -346,7 +358,7 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                           if (value == null || value.isEmpty) {
                             return 'select date';
                           }
-                          // Add more specific validation logic if needed
+
                           return null;
                         },
                       ),
@@ -362,14 +374,14 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                         hintText: "Source",
                         suffixIcon: IconButton(
                           onPressed: () {},
-                          icon: Icon(Icons.keyboard_arrow_down),
+                          icon: const Icon(Icons.keyboard_arrow_down),
                         ),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'enter valid source';
                         }
-                        // Add more specific validation logic if needed
+
                         return null;
                       },
                     ),
@@ -383,17 +395,106 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                       child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: TextFormField(
-                      controller: assigned,
-                      decoration: const InputDecoration(
-                        labelText: "Assigned user",
-                      ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'select assigned user';
+                          return 'enter valid source';
                         }
-                        // Add more specific validation logic if needed
+
                         return null;
                       },
+                      controller: assigned,
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          builder: (BuildContext context) {
+                            List<ClientDb> filteredClients = List.from(clients);
+                            return StatefulBuilder(
+                              builder: (context, setState) => Column(
+                                children: [
+                                  Container(
+                                    height: 70,
+                                    color: Colors.blue,
+                                    child: Row(
+                                      children: [
+                                        const Padding(
+                                          padding: EdgeInsets.all(8.0),
+                                          child: Text(
+                                            "Assigned user",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 20,
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 8.0),
+                                            child: TextField(
+                                              style: const TextStyle(
+                                                  color: Colors.black),
+                                              decoration: const InputDecoration(
+                                                border: OutlineInputBorder(
+                                                  borderSide: BorderSide.none,
+                                                ),
+                                                filled: true,
+                                                fillColor: Colors.white,
+                                                hintText: 'Search...',
+                                                suffixIcon: Icon(Icons.search),
+                                              ),
+                                              onChanged: (value) {
+                                                setState(() {
+                                                  filteredClients = clients
+                                                      .where((client) => client
+                                                          .name
+                                                          .toLowerCase()
+                                                          .contains(value
+                                                              .toLowerCase()))
+                                                      .toList();
+                                                });
+                                              },
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: ListView.separated(
+                                      itemCount: filteredClients.length,
+                                      separatorBuilder:
+                                          (BuildContext context, int index) =>
+                                              const Divider(
+                                        thickness: 2,
+                                      ),
+                                      itemBuilder:
+                                          (BuildContext context, int index) {
+                                        ClientDb client =
+                                            filteredClients[index];
+                                        return ListTile(
+                                          title: Text(client.name),
+                                          onTap: () {
+                                            setState(() {
+                                              dropdownClient = client.name;
+                                              assigned.text = dropdownClient!;
+                                            });
+                                            Navigator.pop(context);
+                                          },
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
+                      decoration: InputDecoration(
+                        labelText: "Assigned user",
+                        hintText: dropdownClient,
+                        suffixIcon: const Icon(Icons.keyboard_arrow_down),
+                      ),
                     ),
                   )),
                   Expanded(
@@ -401,14 +502,14 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                     padding: const EdgeInsets.all(8.0),
                     child: TextFormField(
                       controller: taguser,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         labelText: "tag user",
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'enter valid details';
                         }
-                        // Add more specific validation logic if needed
+
                         return null;
                       },
                     ),
@@ -445,7 +546,7 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                         filled: true,
                         fillColor: Colors.grey[200],
                         labelText: "Reffered by",
-                        suffixIcon: Icon(Icons.search),
+                        suffixIcon: const Icon(Icons.search),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -494,7 +595,7 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                               key: Key("${selectedproduct.name}"),
                               background: Container(
                                 color: Colors.red,
-                                child: Center(
+                                child: const Center(
                                   child: Text("DELETE"),
                                 ),
                               ),
@@ -507,7 +608,6 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                                     selectedProductsBox.deleteAt(index);
                                     // productSelected.removeAt(index);
                                   } else {
-                                    // Handle the case where index is out of bounds (invalid)
                                     print('Invalid index: $index');
                                   }
                                 });
@@ -523,7 +623,7 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                                 //         openPopUp(context, selectedproduct),
                                 //   );
                                 // },
-                                trailing: Container(
+                                trailing: SizedBox(
                                   width: 200,
                                   child: Row(
                                     children: [
@@ -535,7 +635,7 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                                                     onPressed: () {
                                                       decreaseQuantity(index);
                                                     },
-                                                    icon: Icon(Icons
+                                                    icon: const Icon(Icons
                                                         .keyboard_arrow_left),
                                                   ),
                                                   Text(productdetails[index]
@@ -544,13 +644,13 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                                                     onPressed: () {
                                                       increaseQuantity(index);
                                                     },
-                                                    icon: Icon(Icons
+                                                    icon: const Icon(Icons
                                                         .keyboard_arrow_right),
                                                   ),
                                                 ],
                                               ),
                                             )
-                                          : SizedBox(),
+                                          : const SizedBox(),
                                       ElevatedButton(
                                         onPressed: () {
                                           _popupController.forward();
@@ -577,11 +677,10 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                                               );
                                             },
                                           ).then((value) {
-                                            // Reset the animation controller after the popup is closed
                                             _popupController.reset();
                                           });
                                         },
-                                        child: Text("Edit"),
+                                        child: const Text("Edit"),
                                       ),
                                     ],
                                   ),
@@ -599,7 +698,7 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                     productdetails.isNotEmpty
                         ? Row(
                             children: [
-                              SizedBox(
+                              const SizedBox(
                                 width: 10,
                               ),
                               Radio(
@@ -611,7 +710,7 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                                   });
                                 },
                               ),
-                              Text('Percentage'),
+                              const Text('Percentage'),
                               Radio(
                                 value: 'amount',
                                 groupValue: discountType,
@@ -621,8 +720,8 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                                   });
                                 },
                               ),
-                              Text('Amount'),
-                              SizedBox(
+                              const Text('Amount'),
+                              const SizedBox(
                                 width: 20,
                               ),
                               SizedBox(
@@ -648,8 +747,8 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                               ),
                             ],
                           )
-                        : SizedBox(),
-                    SizedBox(
+                        : const SizedBox(),
+                    const SizedBox(
                       height: 15,
                     ),
                     Row(
@@ -659,7 +758,7 @@ class _OrderspageState extends State<Orderspage> with TickerProviderStateMixin {
                           productdetails.isNotEmpty
                               ? 'Grand Total(${productdetails.length} items):${calculateDiscount()} '
                               : "",
-                          style: TextStyle(
+                          style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.green,
                               fontSize: 18),

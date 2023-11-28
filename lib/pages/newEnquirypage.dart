@@ -567,21 +567,86 @@ class _NewenquiryState extends State<Newenquiry> with TickerProviderStateMixin {
                       showModalBottomSheet(
                         context: context,
                         builder: (BuildContext context) {
-                          return Container(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: clients.map<Widget>((ClientDb client) {
-                                return ListTile(
-                                  title: Text(client.name),
-                                  onTap: () {
-                                    setState(() {
-                                      dropdownClient = client.name;
-                                      assigned.text = dropdownClient!;
-                                    });
-                                    Navigator.pop(context);
-                                  },
-                                );
-                              }).toList(),
+                          List<ClientDb> filteredClients = List.from(clients);
+                          return StatefulBuilder(
+                            builder: (context, setState) => Container(
+                              child: Column(
+                                children: [
+                                  Container(
+                                    height: 70,
+                                    color: Colors.blue,
+                                    child: Row(
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Text(
+                                            "Assigned user",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 20,
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 8.0),
+                                            child: TextField(
+                                              style: const TextStyle(
+                                                  color: Colors.black),
+                                              decoration: InputDecoration(
+                                                border: OutlineInputBorder(
+                                                  borderSide: BorderSide.none,
+                                                ),
+                                                filled: true,
+                                                fillColor: Colors.white,
+                                                hintText: 'Search...',
+                                                suffixIcon: Icon(Icons.search),
+                                              ),
+                                              onChanged: (value) {
+                                                setState(() {
+                                                  filteredClients = clients
+                                                      .where((client) => client
+                                                          .name
+                                                          .toLowerCase()
+                                                          .contains(value
+                                                              .toLowerCase()))
+                                                      .toList();
+                                                });
+                                              },
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: ListView.separated(
+                                      itemCount: filteredClients.length,
+                                      separatorBuilder:
+                                          (BuildContext context, int index) =>
+                                              const Divider(
+                                        thickness: 2,
+                                      ),
+                                      itemBuilder:
+                                          (BuildContext context, int index) {
+                                        ClientDb client =
+                                            filteredClients[index];
+                                        return ListTile(
+                                          title: Text(client.name),
+                                          onTap: () {
+                                            setState(() {
+                                              dropdownClient = client.name;
+                                              assigned.text = dropdownClient!;
+                                            });
+                                            Navigator.pop(context);
+                                          },
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           );
                         },
