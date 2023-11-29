@@ -16,6 +16,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 class CallLogsscreen extends StatefulWidget {
   const CallLogsscreen({super.key});
@@ -36,6 +38,7 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
   late String username;
   late bool newpath;
   late String path;
+  List<bool> selectedCallLogs = [];
 
   final audioQuery = OnAudioQuery();
 
@@ -78,6 +81,7 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
         isPlaying = List.generate(callLogs.length, (index) => false);
         duration = List.generate(callLogs.length, (index) => Duration.zero);
         position = List.generate(callLogs.length, (index) => Duration.zero);
+        selectedCallLogs = List.generate(callLogs.length, (index) => false);
       });
     } else {
       // Handle the case where permission is denied by the user.
@@ -187,6 +191,12 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
         title: const Text("Call Logs"),
         actions: [
           IconButton(
+            onPressed: () {
+              shareSelectedCallLogsOnWhatsApp();
+            },
+            icon: Icon(Icons.share_outlined),
+          ),
+          IconButton(
             onPressed: () async {
               final pdfBytes = await genarateCallLogPdf(callLogs);
               // print(pdfBytes);
@@ -252,26 +262,44 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
                         ],
                       ),
                       key: ValueKey(index),
-                      trailing: Wrap(
-                        direction: Axis.vertical,
-                        children: [
-                          Text(
-                            _getFormattedDuration(callLog),
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(
-                            height: 8,
-                          ),
-                          Icon(
-                            Icons.call,
-                            size: 20,
-                            color: callLog.callType == CallType.incoming
-                                ? Colors.blue
-                                : callLog.callType == CallType.outgoing
-                                    ? Colors.green
-                                    : Colors.red,
-                          ),
-                        ],
+                      trailing: Container(
+                        width: 70,
+                        child: Column(
+                          // crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _getFormattedDuration(callLog),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            Expanded(
+                              child: Icon(
+                                Icons.call,
+                                size: 20,
+                                color: callLog.callType == CallType.incoming
+                                    ? Colors.blue
+                                    : callLog.callType == CallType.outgoing
+                                        ? Colors.green
+                                        : Colors.red,
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 12,
+                            ),
+                            Expanded(
+                              child: Checkbox(
+                                value: selectedCallLogs[index],
+                                onChanged: (value) {
+                                  setState(() {
+                                    selectedCallLogs[index] = value ?? false;
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       children: [
                         // pickedFiles.isEmpty
@@ -427,5 +455,40 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
     await file.writeAsBytes(uint8List);
 
     return file.path;
+  }
+
+  Future<void> shareSelectedCallLogsOnWhatsApp() async {
+    // Filter selected call logs
+    List<CallLogEntry> selectedLogs = [];
+    for (int i = 0; i < callLogs.length; i++) {
+      if (selectedCallLogs[i]) {
+        selectedLogs.add(callLogs[i]);
+      }
+    }
+
+    // Check if any call logs are selected
+    if (selectedLogs.isEmpty) {
+      // Show a message or handle the case where no call logs are selected
+      return;
+    }
+
+    // Concatenate selected call logs into a string
+    String callLogsText = '';
+
+    for (var callLog in selectedLogs) {
+      callLogsText += "Name: ${callLog.name ?? 'Unknown'}\n";
+      callLogsText += "Number: ${callLog.number ?? ''}\n";
+      // Add more details as needed
+      callLogsText += "\n";
+    }
+
+    // Encode the text for a URL
+    String encodedText = Uri.encodeComponent(callLogsText);
+
+    // Construct the WhatsApp message URL
+    String whatsappUrl = "whatsapp://send?text=$encodedText";
+
+    // Launch the WhatsApp intent
+    launchUrlString(whatsappUrl);
   }
 }
