@@ -26,7 +26,8 @@ class CallLogsscreen extends StatefulWidget {
   State<CallLogsscreen> createState() => _CallLogsscreenState();
 }
 
-class _CallLogsscreenState extends State<CallLogsscreen> {
+class _CallLogsscreenState extends State<CallLogsscreen>
+    with TickerProviderStateMixin {
   List<CallLogEntry> callLogs = [];
   List<AudioPlayer> audioPlayers = [];
   List<Uint8List> pickedFiles = [];
@@ -39,52 +40,32 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
   late bool newpath;
   late String path;
   List<bool> selectedCallLogs = [];
+  bool isShareButtonClicked = false;
+  bool isSelectAllChecked = false;
+  Map<int, double> tileOffsets = {};
 
   final audioQuery = OnAudioQuery();
 
   @override
   void initState() {
     super.initState();
-    pickandstoreFiles();
-    // check_user_set_path();
+
+    check_user_set_path();
+    // pickandstoreFiles();
     _fetchCallLogs();
 
     getuser();
   }
 
-  // void check_user_set_path() async {
-  //   preferences = await SharedPreferences.getInstance();
-  //   newpath = preferences.getBool('newpath') ?? true;
-  //   if (newpath == false) {
-  //     setState(() {
-  //       path = preferences.getString('filePathKey')!;
-  //     });
-  //   } else {
-  //     pickandstoreFiles();
-  //   }
-  // }
-
-  void getuser() async {
+  void check_user_set_path() async {
     preferences = await SharedPreferences.getInstance();
-    setState(() {
-      username = preferences.getString('username')!;
-    });
-  }
-
-  Future<void> _fetchCallLogs() async {
-    final status = await Permission.phone.request();
-    if (status.isGranted) {
-      callLogs = (await CallLog.get()).toList();
-
+    newpath = preferences.getBool('newpath') ?? true;
+    if (newpath == false) {
       setState(() {
-        audioPlayers = List.generate(callLogs.length, (index) => AudioPlayer());
-        isPlaying = List.generate(callLogs.length, (index) => false);
-        duration = List.generate(callLogs.length, (index) => Duration.zero);
-        position = List.generate(callLogs.length, (index) => Duration.zero);
-        selectedCallLogs = List.generate(callLogs.length, (index) => false);
+        path = preferences.getString('filePathKey')!;
       });
     } else {
-      // Handle the case where permission is denied by the user.
+      pickandstoreFiles();
     }
   }
 
@@ -109,6 +90,29 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
         }
       }
     }
+    setState(() {});
+  }
+
+  void getuser() async {
+    preferences = await SharedPreferences.getInstance();
+    setState(() {
+      username = preferences.getString('username')!;
+    });
+  }
+
+  Future<void> _fetchCallLogs() async {
+    final status = await Permission.phone.request();
+    if (status.isGranted) {
+      callLogs = (await CallLog.get()).toList();
+
+      setState(() {
+        audioPlayers = List.generate(callLogs.length, (index) => AudioPlayer());
+        isPlaying = List.generate(callLogs.length, (index) => false);
+        duration = List.generate(callLogs.length, (index) => Duration.zero);
+        position = List.generate(callLogs.length, (index) => Duration.zero);
+        selectedCallLogs = List.generate(callLogs.length, (index) => false);
+      });
+    } else {}
   }
 
   Future<Uint8List?> readFromfile(String pickedFilePath) async {
@@ -191,8 +195,14 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
         title: const Text("Call Logs"),
         actions: [
           IconButton(
-            onPressed: () {
-              shareSelectedCallLogsOnWhatsApp();
+            onPressed: () async {
+              if (isShareButtonClicked) {
+                await shareSelectedCallLogsOnWhatsApp();
+              }
+              setState(() {
+                isShareButtonClicked = !isShareButtonClicked;
+                isSelectAllChecked = false;
+              });
             },
             icon: Icon(Icons.share_outlined),
           ),
@@ -209,138 +219,202 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
       body: SafeArea(
         child: Column(
           children: [
+            isShareButtonClicked
+                ? Container(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        const Text('Select All'),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 800),
+                          transitionBuilder:
+                              (Widget child, Animation<double> animation) {
+                            return ScaleTransition(
+                                child: child, scale: animation);
+                          },
+                          child: Checkbox(
+                            key: ValueKey<bool>(isSelectAllChecked),
+                            value: isSelectAllChecked,
+                            onChanged: (value) {
+                              setState(() {
+                                isSelectAllChecked = value ?? false;
+                                selectedCallLogs = List.generate(
+                                    callLogs.length,
+                                    (index) => isSelectAllChecked);
+                                tileOffsets = Map.fromIterable(
+                                  List.generate(
+                                      callLogs.length, (index) => index),
+                                  key: (index) => index,
+                                  value: (_) => isSelectAllChecked ? 8.0 : 0.0,
+                                );
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : SizedBox(),
             Expanded(
               child: SizedBox(
                 height: 700,
-                child: ListView.separated(
+                child: ListView.builder(
                   itemBuilder: (context, index) {
                     final callLog = callLogs[index];
 
-                    return ExpansionTile(
-                      leading: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Expanded(
-                            // flex: 1,
-                            child: Text(
-                              year,
-                              style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.yellow[600],
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              day,
-                              style: TextStyle(
-                                  fontSize: 25,
-                                  color: Colors.blue[600],
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          Expanded(
-                            // flex: 1,
-                            child: Text(
-                              month,
-                              style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.red[600],
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ],
-                      ),
-                      title: Text(callLog.name ?? "Unknown"),
-                      subtitle: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(callLog.number ?? ""),
-                          // Text(pickedFiles[index].name)
-                        ],
-                      ),
-                      key: ValueKey(index),
-                      trailing: Container(
-                        width: 70,
-                        child: Column(
-                          // crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                _getFormattedDuration(callLog),
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold),
+                    return TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        duration: const Duration(milliseconds: 500),
+                        builder: (context, value, child) {
+                          return Transform.scale(
+                            scale:
+                                1.0 + (tileOffsets[index] ?? 0) / 100 * value,
+                            child: ExpansionTile(
+                              leading: Column(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  Expanded(
+                                    // flex: 1,
+                                    child: Text(
+                                      year,
+                                      style: TextStyle(
+                                          fontSize: 15,
+                                          color: Colors.yellow[600],
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Text(
+                                      day,
+                                      style: TextStyle(
+                                          fontSize: 25,
+                                          color: Colors.blue[600],
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    // flex: 1,
+                                    child: Text(
+                                      month,
+                                      style: TextStyle(
+                                          fontSize: 15,
+                                          color: Colors.red[600],
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                            Expanded(
-                              child: Icon(
-                                Icons.call,
-                                size: 20,
-                                color: callLog.callType == CallType.incoming
-                                    ? Colors.blue
-                                    : callLog.callType == CallType.outgoing
-                                        ? Colors.green
-                                        : Colors.red,
+                              title: Text(callLog.name ?? "Unknown"),
+                              subtitle: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(callLog.number ?? ""),
+                                  // Text(pickedFiles[index].name)
+                                ],
                               ),
-                            ),
-                            const SizedBox(
-                              height: 12,
-                            ),
-                            Expanded(
-                              child: Checkbox(
-                                value: selectedCallLogs[index],
-                                onChanged: (value) {
-                                  setState(() {
-                                    selectedCallLogs[index] = value ?? false;
-                                  });
-                                },
+                              key: ValueKey(index),
+                              trailing: Container(
+                                width: 70,
+                                child: Column(
+                                  // crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        _getFormattedDuration(callLog),
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Icon(
+                                        Icons.call,
+                                        size: 20,
+                                        color: callLog.callType ==
+                                                CallType.incoming
+                                            ? Colors.blue
+                                            : callLog.callType ==
+                                                    CallType.outgoing
+                                                ? Colors.green
+                                                : Colors.red,
+                                      ),
+                                    ),
+                                    const SizedBox(
+                                      height: 12,
+                                    ),
+                                    Expanded(
+                                      child: isShareButtonClicked
+                                          ? Checkbox(
+                                              value: selectedCallLogs[index],
+                                              onChanged: (value) {
+                                                setState(() {
+                                                  selectedCallLogs[index] =
+                                                      value ?? false;
+                                                  isSelectAllChecked =
+                                                      !selectedCallLogs
+                                                          .contains(false);
+                                                  tileOffsets[index] =
+                                                      selectedCallLogs[index]
+                                                          ? 3.0
+                                                          : 0.0;
+                                                });
+                                              },
+                                            )
+                                          : Container(),
+                                    ),
+                                  ],
+                                ),
                               ),
+                              children: [
+                                // pickedFiles.isEmpty
+                                //     ? SizedBox(
+                                //         child: Center(
+                                //           child: Text("No recordings Available"),
+                                //         ),
+                                //       )
+                                //     :
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      onPressed: () {
+                                        print(pickedFiles[index]);
+                                        _playRecordings(
+                                            pickedFiles[index], index);
+                                      },
+                                      icon: Icon(isPlaying[index]
+                                          ? Icons.pause
+                                          : Icons.play_arrow),
+                                    ),
+                                    Expanded(
+                                      flex: 6,
+                                      child: Slider(
+                                        min: 0,
+                                        max: duration[index]
+                                            .inSeconds
+                                            .toDouble(),
+                                        value: position[index]
+                                            .inSeconds
+                                            .toDouble(),
+                                        onChanged: (value) {
+                                          seekAudio(index, value);
+                                        },
+                                      ),
+                                    ),
+                                    Expanded(
+                                        flex: 1,
+                                        child: Text(formattime(duration[index] -
+                                            position[index]))),
+                                  ],
+                                )
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                      children: [
-                        // pickedFiles.isEmpty
-                        //     ? SizedBox(
-                        //         child: Center(
-                        //           child: Text("No recordings Available"),
-                        //         ),
-                        //       )
-                        //     :
-                        Row(
-                          children: [
-                            IconButton(
-                              onPressed: () {
-                                print(pickedFiles[index]);
-                                _playRecordings(pickedFiles[index], index);
-                              },
-                              icon: Icon(isPlaying[index]
-                                  ? Icons.pause
-                                  : Icons.play_arrow),
-                            ),
-                            Expanded(
-                              flex: 6,
-                              child: Slider(
-                                min: 0,
-                                max: duration[index].inSeconds.toDouble(),
-                                value: position[index].inSeconds.toDouble(),
-                                onChanged: (value) {
-                                  seekAudio(index, value);
-                                },
-                              ),
-                            ),
-                            Expanded(
-                                flex: 1,
-                                child: Text(formattime(
-                                    duration[index] - position[index]))),
-                          ],
-                        )
-                      ],
-                    );
+                          );
+                        });
                   },
-                  separatorBuilder: (context, index) => const Divider(),
+                  // separatorBuilder: (context, index) => const Divider(),
                   itemCount: callLogs.length,
                 ),
               ),
@@ -379,6 +453,7 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
     for (final player in audioPlayers) {
       player.dispose();
     }
+
     super.dispose();
   }
 
@@ -451,14 +526,12 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
     final directory = await getTemporaryDirectory();
     final file = File('${directory.path}/temp_audio.mp3');
 
-    // Write the Uint8List to the file
     await file.writeAsBytes(uint8List);
 
     return file.path;
   }
 
   Future<void> shareSelectedCallLogsOnWhatsApp() async {
-    // Filter selected call logs
     List<CallLogEntry> selectedLogs = [];
     for (int i = 0; i < callLogs.length; i++) {
       if (selectedCallLogs[i]) {
@@ -466,29 +539,23 @@ class _CallLogsscreenState extends State<CallLogsscreen> {
       }
     }
 
-    // Check if any call logs are selected
     if (selectedLogs.isEmpty) {
-      // Show a message or handle the case where no call logs are selected
       return;
     }
 
-    // Concatenate selected call logs into a string
     String callLogsText = '';
 
     for (var callLog in selectedLogs) {
       callLogsText += "Name: ${callLog.name ?? 'Unknown'}\n";
       callLogsText += "Number: ${callLog.number ?? ''}\n";
-      // Add more details as needed
+
       callLogsText += "\n";
     }
 
-    // Encode the text for a URL
     String encodedText = Uri.encodeComponent(callLogsText);
 
-    // Construct the WhatsApp message URL
     String whatsappUrl = "whatsapp://send?text=$encodedText";
 
-    // Launch the WhatsApp intent
     launchUrlString(whatsappUrl);
   }
 }
