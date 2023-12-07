@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
+import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:uisample/model/product.dart';
 import 'package:uisample/model/productmodel.dart';
 
@@ -20,6 +21,8 @@ class _ProductpageState extends State<Productpage> {
   // List<Product> selectedProducts = [];
   List<Product> selectedProducts = [];
   late Box<ProductDb> productBox;
+  final GlobalKey _qrKey = GlobalKey(debugLabel: 'QR');
+  late QRViewController _qrViewController;
 
   Future fetchAndCacheData() async {
     if (productBox.isNotEmpty) {
@@ -35,7 +38,6 @@ class _ProductpageState extends State<Productpage> {
         }).toList();
       });
     } else {
-      // If there is no cached data, fetch it from the API.
       var url = Uri.parse("https://dummyjson.com/products");
       var response = await http.get(url);
       if (response.statusCode == 200) {
@@ -43,7 +45,7 @@ class _ProductpageState extends State<Productpage> {
         Productmodel productmodel = Productmodel.fromJson(jsonData);
         setState(() {
           productlist = productmodel.products!;
-          // Cache the fetched data in Hive.
+
           productBox.clear();
           productBox.addAll(productlist.map((product) {
             return ProductDb(
@@ -61,7 +63,6 @@ class _ProductpageState extends State<Productpage> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     Hive.openBox<ProductDb>('productBox').then((box) {
       productBox = box;
@@ -83,16 +84,34 @@ class _ProductpageState extends State<Productpage> {
               height: 80,
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: TextField(
-                  controller: serchcontroller,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: serchcontroller,
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          hintText: "Search here",
+                          suffixIcon: Icon(Icons.search),
+                        ),
+                        onChanged: searchProduct,
+                      ),
                     ),
-                    hintText: "Search here",
-                    suffixIcon: Icon(Icons.search),
-                  ),
-                  onChanged: searchProduct,
+                    IconButton(
+                      onPressed: () async {
+                        String scannedResult = await _scanQR();
+                        if (scannedResult.isNotEmpty) {
+                          setState(() {
+                            serchcontroller.text = scannedResult;
+                          });
+                          searchProduct(scannedResult);
+                        }
+                      },
+                      icon: Icon(Icons.qr_code),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -174,5 +193,31 @@ class _ProductpageState extends State<Productpage> {
     setState(() {
       productlist = suggestions;
     });
+  }
+
+  Future<String> _scanQR() async {
+    String scannedResult = "";
+    await showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          height: 400,
+          child: QRView(
+            key: _qrKey,
+            onQRViewCreated: (QRViewController controller) {
+              setState(() {
+                _qrViewController = controller;
+              });
+              controller.scannedDataStream.listen((scanData) {
+                scannedResult = scanData.code ?? "";
+                _qrViewController.pauseCamera();
+                Navigator.pop(context, scannedResult);
+              });
+            },
+          ),
+        );
+      },
+    );
+    return scannedResult;
   }
 }
