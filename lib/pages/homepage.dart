@@ -1,6 +1,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_locales/flutter_locales.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -34,6 +35,11 @@ class _MyhomepageState extends State<Myhomepage> {
   String currentadress = "";
   late SharedPreferences preferences;
   late String username;
+  List localemojies = ["🇺🇸", "🇮🇳", "🇮🇳"];
+  List locales = ["English", "हिंदी", "മലയാളം"];
+  List localcodes = ['en', 'hi', 'ml'];
+  int currentindex = 0;
+  bool selectedlocales = false;
 
   Future<Position> _getCurrentlocation() async {
     servicepermission = await Geolocator.isLocationServiceEnabled();
@@ -97,11 +103,12 @@ class _MyhomepageState extends State<Myhomepage> {
 
   @override
   Widget build(BuildContext context) {
+    // var localizations = AppLocalizations.of(context);
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
         // leading: const Icon(Icons.menu),
-        title: const Text("Off Duty"),
+        title: LocaleText("off_duty"),
         actions: [
           IconButton(
             onPressed: () {},
@@ -146,12 +153,26 @@ class _MyhomepageState extends State<Myhomepage> {
                 children: [
                   Expanded(
                     flex: 2,
-                    child: Text(
-                      "welcome $username",
-                      style: TextStyle(
-                        fontSize: 17,
-                        color: Colors.white,
-                      ),
+                    child: Wrap(
+                      children: [
+                        LocaleText(
+                          'welcome',
+                          style: TextStyle(
+                            fontSize: 17,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(
+                          width: 2,
+                        ),
+                        Text(
+                          username,
+                          style: TextStyle(
+                            fontSize: 17,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Expanded(
@@ -193,6 +214,22 @@ class _MyhomepageState extends State<Myhomepage> {
             const DrawerHeader(
               child: Center(child: Text("")),
             ),
+            ExpansionTile(
+                title: Text("Langauges"),
+                children: List.generate(locales.length, (index) {
+                  selectedlocales = currentindex == index;
+                  return ListTile(
+                    leading: Text(localemojies[index]),
+                    title: Text(locales[index]),
+                    trailing: Text(localcodes[index]),
+                    onTap: () {
+                      setState(() {
+                        currentindex = index;
+                      });
+                      Locales.change(context, localcodes[currentindex]);
+                    },
+                  );
+                })),
             ListTile(
               title: const Text("logout"),
               trailing: const Icon(Icons.logout),
@@ -239,7 +276,7 @@ class _MyhomepageState extends State<Myhomepage> {
               },
             ),
             Homecard(
-              name: "Clients",
+              name: "client",
               color: Colors.red,
               icon: Icons.card_travel_rounded,
               ontap: () {

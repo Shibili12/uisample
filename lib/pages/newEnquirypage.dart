@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_locales/flutter_locales.dart';
 import 'package:get/utils.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -357,7 +358,7 @@ class _NewenquiryState extends State<Newenquiry> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("New Lead"),
+        title: LocaleText("enquiry_page_title"),
         actions: [
           const Icon(Icons.mic),
           const SizedBox(
@@ -383,8 +384,8 @@ class _NewenquiryState extends State<Newenquiry> with TickerProviderStateMixin {
                 Navigator.of(context).pop();
               }
             },
-            child: Text(
-              widget.enquiries == null ? "SAVE" : "Update",
+            child: LocaleText(
+              widget.enquiries == null ? "save" : "Update",
               style: TextStyle(color: Colors.white, fontSize: 18),
             ),
           ),
@@ -401,8 +402,10 @@ class _NewenquiryState extends State<Newenquiry> with TickerProviderStateMixin {
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
                     controller: primary,
-                    decoration:
-                        const InputDecoration(labelText: "Primary Number"),
+                    decoration: InputDecoration(
+                      labelText:
+                          Locales.string(context, 'primary_number_label'),
+                    ),
                   ),
                 )),
                 Expanded(
@@ -410,8 +413,8 @@ class _NewenquiryState extends State<Newenquiry> with TickerProviderStateMixin {
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
                     controller: name,
-                    decoration: const InputDecoration(
-                      labelText: "Name",
+                    decoration: InputDecoration(
+                      labelText: Locales.string(context, 'name_label'),
                       suffixIcon: Icon(Icons.search),
                     ),
                   ),
@@ -426,8 +429,10 @@ class _NewenquiryState extends State<Newenquiry> with TickerProviderStateMixin {
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
                     controller: secondary,
-                    decoration:
-                        const InputDecoration(labelText: "Secondary Number"),
+                    decoration: InputDecoration(
+                      labelText:
+                          Locales.string(context, 'secondary_number_label'),
+                    ),
                   ),
                 )),
                 Expanded(
@@ -435,8 +440,9 @@ class _NewenquiryState extends State<Newenquiry> with TickerProviderStateMixin {
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
                     controller: whatsapp,
-                    decoration: const InputDecoration(
-                      labelText: "Whatsapp Number",
+                    decoration: InputDecoration(
+                      labelText:
+                          Locales.string(context, 'whatsapp_number_label'),
                     ),
                   ),
                 )),
@@ -450,8 +456,10 @@ class _NewenquiryState extends State<Newenquiry> with TickerProviderStateMixin {
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
                     controller: outside,
-                    decoration:
-                        const InputDecoration(labelText: "Outside Country Mob"),
+                    decoration: InputDecoration(
+                      labelText: Locales.string(
+                          context, 'outsidecontrymob_number_label'),
+                    ),
                   ),
                 )),
                 Expanded(
@@ -459,8 +467,8 @@ class _NewenquiryState extends State<Newenquiry> with TickerProviderStateMixin {
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
                     controller: email,
-                    decoration: const InputDecoration(
-                      labelText: "Email",
+                    decoration: InputDecoration(
+                      labelText: Locales.string(context, 'email_label'),
                     ),
                   ),
                 )),
@@ -475,7 +483,7 @@ class _NewenquiryState extends State<Newenquiry> with TickerProviderStateMixin {
                     child: TextFormField(
                       controller: dateinput,
                       decoration: InputDecoration(
-                        labelText: "Follow.Date",
+                        labelText: Locales.string(context, 'follow_date_label'),
                         suffixIcon: Icon(Icons.calendar_month),
                       ),
                       onTap: () async {
@@ -497,8 +505,9 @@ class _NewenquiryState extends State<Newenquiry> with TickerProviderStateMixin {
                     padding: const EdgeInsets.all(8.0),
                     child: TextFormField(
                         controller: timecontroller,
-                        decoration: const InputDecoration(
-                          labelText: "Follow.Time",
+                        decoration: InputDecoration(
+                          labelText:
+                              Locales.string(context, 'follow_time_label'),
                           suffixIcon: Icon(Icons.alarm),
                         ),
                         onTap: () async {
@@ -521,7 +530,7 @@ class _NewenquiryState extends State<Newenquiry> with TickerProviderStateMixin {
                     child: TextFormField(
                       controller: expdate,
                       decoration: InputDecoration(
-                        labelText: "Exp closure",
+                        labelText: Locales.string(context, 'exp_closure_label'),
                         suffixIcon: Icon(Icons.calendar_month),
                       ),
                       onTap: () async {
@@ -544,7 +553,7 @@ class _NewenquiryState extends State<Newenquiry> with TickerProviderStateMixin {
                   child: TextFormField(
                     controller: source,
                     decoration: InputDecoration(
-                      labelText: "Source",
+                      labelText: Locales.string(context, 'source_label'),
                       hintText: "Source",
                       suffixIcon: IconButton(
                         onPressed: () {},
@@ -579,8 +588,8 @@ class _NewenquiryState extends State<Newenquiry> with TickerProviderStateMixin {
                                       children: [
                                         Padding(
                                           padding: const EdgeInsets.all(8.0),
-                                          child: Text(
-                                            "Assigned user",
+                                          child: LocaleText(
+                                            "assigned_user_label",
                                             style: TextStyle(
                                               color: Colors.white,
                                               fontSize: 20,
@@ -653,7 +662,7 @@ class _NewenquiryState extends State<Newenquiry> with TickerProviderStateMixin {
                       );
                     },
                     decoration: InputDecoration(
-                      labelText: "Assigned user",
+                      labelText: Locales.string(context, 'assigned_user_label'),
                       hintText: dropdownClient,
                       suffixIcon: Icon(Icons.keyboard_arrow_down),
                     ),
@@ -661,11 +670,11 @@ class _NewenquiryState extends State<Newenquiry> with TickerProviderStateMixin {
                 )),
                 Expanded(
                     child: Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: EdgeInsets.all(8.0),
                   child: TextFormField(
                     controller: taguser,
                     decoration: InputDecoration(
-                      labelText: "Tag user",
+                      labelText: Locales.string(context, 'tag_user_label'),
                       hintText: "Select",
                       suffixIcon: IconButton(
                         onPressed: () {},
@@ -684,8 +693,8 @@ class _NewenquiryState extends State<Newenquiry> with TickerProviderStateMixin {
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
                     controller: location,
-                    decoration: const InputDecoration(
-                      labelText: "Location",
+                    decoration: InputDecoration(
+                      labelText: Locales.string(context, 'location_label'),
                       suffixIcon: Icon(Icons.location_on),
                     ),
                   ),
@@ -698,7 +707,7 @@ class _NewenquiryState extends State<Newenquiry> with TickerProviderStateMixin {
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: Colors.grey[200],
-                      labelText: "Reffered by",
+                      labelText: Locales.string(context, 'refferd_label'),
                       suffixIcon: Icon(Icons.search),
                     ),
                   ),
@@ -713,9 +722,8 @@ class _NewenquiryState extends State<Newenquiry> with TickerProviderStateMixin {
                   padding: const EdgeInsets.all(8.0),
                   child: TextFormField(
                     controller: producttext,
-                    decoration: const InputDecoration(
-                      labelText: "Products",
-                    ),
+                    decoration: InputDecoration(
+                        labelText: Locales.string(context, 'products_label')),
                     onTap: () async {
                       if (widget.enquiries == null) {
                         saveDataToHive();

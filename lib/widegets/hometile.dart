@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_locales/flutter_locales.dart';
 
 class Homecard extends StatelessWidget {
   String name;
@@ -33,7 +34,7 @@ class Homecard extends StatelessWidget {
                 color: Colors.white,
               ),
             ),
-            Text(
+            LocaleText(
               name,
               style: TextStyle(color: Colors.blue[700]),
             ),
